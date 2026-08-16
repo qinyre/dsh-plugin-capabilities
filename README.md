@@ -10,7 +10,9 @@ A dsh plugin that adds "Skills" and "MCP" tabs to the Web UI's Settings page, so
 dsh plugin --profile web add dsh-plugin-capabilities
 ```
 
-尚未发布到 npm 时，可先安装本地源码检出：`dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities`，包内的 `prepare` 脚本会自动构建出 `lib/`。安装后打开 设置 → 插件，即可看到新增的标签页。
+安装后打开 设置 → 插件，即可看到新增的「技能」与「MCP」标签页。
+
+开发时也可以直接安装本地源码检出：`dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities`。包内的 `prepare` 脚本会自动构建出 `lib/`。
 
 ## 技能
 
