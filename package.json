@@ -1,0 +1,63 @@
+{
+  "name": "dsh-plugin-capabilities",
+  "version": "0.1.0",
+  "description": "Manage skills and MCP servers from the Web UI Settings. 在设置页管理 dsh 的技能与 MCP 服务器。",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qinyre/dsh-plugin-capabilities.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qinyre/dsh-plugin-capabilities/issues"
+  },
+  "homepage": "https://github.com/qinyre/dsh-plugin-capabilities#readme",
+  "keywords": ["deepseek", "harness", "dsh", "dsh-plugin", "skills", "mcp"],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "src", "cordis.patch.yml", "LICENSE"],
+  "scripts": {
+    "build": "node scripts/build-node.mjs && node scripts/build-client.mjs && node scripts/verify-bundle.mjs",
+    "prepare": "node scripts/build-node.mjs && node scripts/build-client.mjs && node scripts/verify-bundle.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "bundle-check": "node scripts/verify-bundle.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-skill-filesystem": "^0.1.0-rc.6",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "~18.3.1",
+    "esbuild": "^0.24.0",
+    "react": "^18.3.1",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.1"
+  }
+}
