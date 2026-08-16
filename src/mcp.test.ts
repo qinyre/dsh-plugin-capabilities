@@ -71,6 +71,14 @@ describe('profile patch CRUD', () => {
     expect(rows.find(row => row.id === 'mcp-github')?.command).toBe('pnpm')
   })
 
+  it('treats a create request that omits id as a create (raw JSON cast)', () => {
+    const raw = { serverName: 'probe', transport: 'stdio', command: 'node' } as unknown as McpInput
+    expect(validateMcpInput(raw)).toBeNull()
+    const id = upsertMcp(profile, raw)
+    expect(id).toBe('mcp-probe')
+    expect(listMcp(profile).find(row => row.id === 'mcp-probe')?.command).toBe('node')
+  })
+
   it('toggles disabled and removes rows', () => {
     expect(setMcpDisabled(profile, 'mcp-github', true)).toBe(true)
     expect(listMcp(profile).find(row => row.id === 'mcp-github')?.disabled).toBe(true)

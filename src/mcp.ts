@@ -94,7 +94,9 @@ export function listMcp(profileDirPath: string): McpRow[] {
 /** Validate one write request; returns the rejection reason or null. */
 export function validateMcpInput(input: McpInput): string | null {
   if (!SERVER_NAME_RE.test(input.serverName)) return 'serverName must be 1-32 chars of A-Z a-z 0-9 _ -'
-  if (input.id.includes('/') || input.id.includes('..')) return 'invalid id'
+  // The route casts raw JSON to McpInput; a create request may omit `id`.
+  const id = input.id ?? ''
+  if (id.includes('/') || id.includes('..')) return 'invalid id'
   if (input.transport === 'stdio') {
     if (input.command === undefined || input.command.trim() === '') return 'stdio transport requires a command'
   } else if (input.url === undefined || !/^https?:\/\//.test(input.url)) {
@@ -105,14 +107,15 @@ export function validateMcpInput(input: McpInput): string | null {
 
 /** Add or replace one server row. Returns the (possibly deduplicated) id. */
 export function upsertMcp(profileDirPath: string, input: McpInput): string {
+  const inputId = input.id ?? ''
   const doc = loadPatch(profileDirPath)
   const seq = rowSeq(doc)
 
-  const existing = input.id !== ''
-    ? mcpRows(doc).find(item => item.get('id') === input.id)
+  const existing = inputId !== ''
+    ? mcpRows(doc).find(item => item.get('id') === inputId)
     : undefined
 
-  let id = input.id !== '' ? input.id : `mcp-${input.serverName}`
+  let id = inputId !== '' ? inputId : `mcp-${input.serverName}`
   if (existing === undefined) {
     const taken = new Set(
       (seq.items ?? []).map(item => String(item.get('id') ?? '')).filter(id => id !== ''),
