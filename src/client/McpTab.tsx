@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
 import { Button, IconApiOutline14, IconRefreshOutline14, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import { CSS } from './css.ts'
-import type { Translate } from './index.ts'
+import type { ImportedServerView, Translate } from './index.ts'
 
 export interface McpRow {
   id: string
@@ -26,6 +26,8 @@ export interface McpInjected {
   save(input: Record<string, unknown>): Promise<{ ok: boolean; id: string }>
   toggle(id: string, disabled: boolean): Promise<{ ok: boolean }>
   remove(id: string): Promise<{ ok: boolean }>
+  scanImport(): Promise<{ servers: ImportedServerView[]; existing: string[] }>
+  applyImport(items: Array<{ agent: string; name: string }>): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>
   restart(): void
   desktop: boolean
 }
@@ -65,11 +67,50 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const [servers, setServers] = useState<McpRow[] | null>(null)
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importItems, setImportItems] = useState<Array<{ server: ImportedServerView; existing: boolean; checked: boolean }> | null>(null)
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(false)
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+
+  const openImport = async (): Promise<void> => {
+    setImportOpen(true)
+    setImportItems(null)
+    try {
+      const body = await injected.scanImport()
+      const existing = new Set(body.existing)
+      setImportItems(body.servers.map(server => ({
+        server,
+        existing: existing.has(server.name),
+        checked: !existing.has(server.name),
+      })))
+    } catch (error) {
+      setImportItems([])
+      setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
+    }
+  }
+
+  const doImport = async (): Promise<void> => {
+    if (importItems === null) return
+    const items = importItems.filter(item => item.checked && !item.existing).map(item => ({ agent: item.server.agent, name: item.server.name }))
+    setBusy(true)
+    try {
+      const body = await injected.applyImport(items)
+      const failed = body.results.filter(item => !item.ok)
+      setOutcome(failed.length === 0
+        ? { ok: true, text: t('restartNeeded') }
+        : { ok: false, text: `${t('failed')}: ${failed.map(item => `${item.name} (${item.error})`).join(', ')}` })
+      setImportOpen(false)
+      setPending(true)
+      setReload((value) => value + 1)
+    } catch (error) {
+      setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const reloadList = (showPending: boolean): void => {
     setReload((value) => value + 1)
@@ -184,6 +225,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         <IconApiOutline14 aria-hidden="true" />
         <h3>{t('mcpTitle')}</h3>
         <span className="dpc-spacer" />
+        <Button variant="ghost" size="sm" onClick={() => void openImport()}>{t('importServers')}</Button>
         <Button variant="primary" size="sm" onClick={openCreate}>{t('addServer')}</Button>
       </div>
       <p className="dpc-intro">{t('mcpIntro')}</p>
@@ -308,6 +350,61 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         }
       >
         <p>{t('removeWarn')}</p>
+      </Modal>
+
+      <Modal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        title={t('importServers')}
+      >
+        <div className="dpc-form">
+          <p className="dpc-intro" style={{ margin: 0 }}>{t('importIntro')}</p>
+          {importItems === null && <p className="dpc-empty">{t('loading')}</p>}
+          {importItems !== null && importItems.length === 0 && <p className="dpc-empty">{t('importEmpty')}</p>}
+          {importItems !== null && importItems.length > 0 && (
+            <ul className="dpc-cards" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
+              {importItems.map((item, index) => (
+                <li className="dpc-card" key={`${item.server.agent}/${item.server.name}`} style={{ opacity: item.existing ? 0.55 : 1 }}>
+                  <div className="dpc-cardTop">
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, cursor: item.existing ? 'default' : 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        disabled={item.existing}
+                        onChange={(event) => {
+                          const next = importItems.slice()
+                          next[index] = { ...item, checked: event.target.checked }
+                          setImportItems(next)
+                        }}
+                      />
+                      <strong className="dpc-cardTitle" title={item.server.name}>{item.server.name}</strong>
+                    </label>
+                    <span className="dpc-tag" data-kind="source">{item.server.agent === 'claude-code' ? 'Claude Code' : 'Codex'}</span>
+                    <span className="dpc-tag">{item.server.transport}</span>
+                    {item.existing && <span className="dpc-tag">{t('importExisting')}</span>}
+                  </div>
+                  <p className="dpc-cardDesc">
+                    {item.server.transport === 'stdio'
+                      ? `${item.server.command ?? ''} ${(item.server.args ?? []).join(' ')}`
+                      : item.server.url ?? ''}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {formError !== null && <p className="dpc-formError">{formError}</p>}
+          <div className="dpc-cardRow">
+            <span className="dpc-spacer" />
+            <Button variant="ghost" onClick={() => setImportOpen(false)}>{t('cancel')}</Button>
+            <Button
+              variant="primary"
+              disabled={busy || importItems === null || !importItems.some(item => item.checked && !item.existing)}
+              onClick={() => void doImport()}
+            >
+              {t('importSelected')}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

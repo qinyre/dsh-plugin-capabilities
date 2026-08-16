@@ -1,8 +1,8 @@
 # dsh-plugin-capabilities
 
-A dsh plugin that adds "Skills" and "MCP" tabs to the Web UI's Settings page: manage the skill catalog and the profile's MCP servers without touching files or the command line.
+A dsh plugin that adds "Skills" and "MCP" tabs to the Web UI's Settings page: manage the skill catalog and the profile's MCP servers without touching files or the command line — including importing MCP servers and picking up skills from other agents (Claude Code, Codex).
 
-一个 dsh 插件：在 Web UI 设置页的插件区新增「技能」与「MCP」两个标签页——查看与编辑技能目录、管理 profile 的 MCP 服务器行，全程不碰命令行。`dsh web` 与 DSH Desktop 均可使用。
+一个 dsh 插件：在 Web UI 设置页的插件区新增「技能」与「MCP」两个标签页——查看与编辑技能目录、管理 profile 的 MCP 服务器行，并支持从其他 agent（Claude Code、Codex）导入 MCP 配置、纳入其技能目录。`dsh web` 与 DSH Desktop 均可使用。
 
 ## 安装
 
@@ -19,10 +19,12 @@ dsh plugin --profile web add dsh-plugin-capabilities
 - 列出 dsh 发现的全部技能：名称、描述、来源（项目/用户/内置/运行时/自定义）、调用策略（模型可调用、用户 `/` 可调用）。
 - 用户级技能（`$DSH_HOME/skills`）可在此新建、编辑、删除：表单化编辑 frontmatter 与正文，写入 `SKILL.md`。技能目录被 dsh 的文件系统 provider 监听，保存后数秒内进入目录，无需重启。
 - 非用户来源（项目、内置等）只读展示，可查看全文。
+- **其他 agent 的技能零拷贝纳入**：若存在 `~/.claude/skills`（Claude Code）或 `~/.codex/skills`（Codex），会作为额外扫描根自动进入目录——不复制文件，双向实时同步，在原 agent 里改动这里立即反映。
 
 **MCP**
 
 - 管理 profile patch 层中的 MCP 服务器行（每行一个 `@deepseek-ai/dsh-mcp-client` 实例）：添加（stdio 命令或 streamable-http URL）、编辑、停用/启用、移除。
+- **从其他 agent 导入**：一键扫描 Claude Code（`~/.claude.json`、`~/.claude/settings.json`）与 Codex（`~/.codex/config.toml`）的 MCP 服务器配置，勾选后转为本 profile 的服务器行（stdio 与 http 均支持；已存在的同名服务器置灰跳过）。Claude 的 `${VAR}` 环境变量引用按字面值导入。
 - YAML 编辑采用文档级 API，保留文件中的其他行与注释。
 - MCP 行变更需要重启 dsh 才进入组合——界面会显示待重启横幅；在 DSH Desktop 中可直接经壳层重启（sidecar 受应用监督）。
 

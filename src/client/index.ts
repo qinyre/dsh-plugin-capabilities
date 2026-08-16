@@ -49,6 +49,18 @@ export const inject = ['slots', 'locale']
 
 export interface SkillBody { content: string }
 
+/** One foreign-agent server from the import scan. */
+export interface ImportedServerView {
+  agent: 'claude-code' | 'codex'
+  name: string
+  transport: 'stdio' | 'streamable-http'
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  url?: string
+  headers?: Record<string, string>
+}
+
 export function apply(ctx: CapabilitiesClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-plugin-capabilities: dictionaries')
   const t = ctx.locale.bind(NS)
@@ -65,6 +77,9 @@ export function apply(ctx: CapabilitiesClientContext): void {
     save: (input: unknown) => post('/dsh-plugin-capabilities/mcp/save', input) as Promise<{ ok: boolean; id: string }>,
     toggle: (id: string, disabled: boolean) => post('/dsh-plugin-capabilities/mcp/toggle', { id, disabled }) as Promise<{ ok: boolean }>,
     remove: (id: string) => post('/dsh-plugin-capabilities/mcp/remove', { id }) as Promise<{ ok: boolean }>,
+    scanImport: () => fetchJson<{ servers: ImportedServerView[]; existing: string[] }>('/dsh-plugin-capabilities/import/scan'),
+    applyImport: (items: Array<{ agent: string; name: string }>) =>
+      post('/dsh-plugin-capabilities/import/apply', { items }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>,
     restart: (): void => { window.dshDesktop?.restartSidecar?.() },
     desktop: window.dshDesktop !== undefined,
   }

@@ -1,6 +1,7 @@
 /** HTTP routes bridging the Settings UI to the capabilities manager. */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { scanAllMcp } from './agents.ts'
 import { readJsonBody, sameOrigin, sendJson } from './http.ts'
 import { deleteSkill, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
@@ -201,6 +202,78 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: { profil
           }
           const ok = removeMcp(config.profileDirPath, body.id)
           sendJson(response, ok ? 200 : 404, ok ? { ok: true, restartNeeded: true } : { error: 'server row not found' })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/import/scan',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          response.writeHead(405, { allow: 'GET' })
+          response.end()
+          return
+        }
+        try {
+          sendJson(response, 200, {
+            servers: scanAllMcp(),
+            // Profile serverNames, so the browser can grey out existing ones.
+            existing: listMcp(config.profileDirPath).map(row => row.serverName),
+          })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/import/apply',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { items?: unknown }
+          const wanted = new Set(
+            (Array.isArray(body.items) ? body.items : [])
+              .filter((item): item is { agent: string; name: string } =>
+                typeof item === 'object' && item !== null && typeof (item as { agent?: unknown }).agent === 'string' && typeof (item as { name?: unknown }).name === 'string')
+              .map(item => `${item.agent}/${item.name}`),
+          )
+          const results: Array<{ name: string; ok: boolean; error?: string }> = []
+          for (const server of scanAllMcp()) {
+            if (!wanted.has(`${server.agent}/${server.name}`)) continue
+            const existing = listMcp(config.profileDirPath).some(row => row.serverName === server.name)
+            if (existing) {
+              results.push({ name: server.name, ok: false, error: 'already in profile' })
+              continue
+            }
+            const input: McpInput = {
+              id: '',
+              serverName: server.name,
+              transport: server.transport,
+              ...(server.transport === 'stdio'
+                ? { command: server.command, args: server.args, env: server.env }
+                : { url: server.url, headers: server.headers }),
+            }
+            const invalid = validateMcpInput(input)
+            if (invalid !== null) {
+              results.push({ name: server.name, ok: false, error: invalid })
+              continue
+            }
+            upsertMcp(config.profileDirPath, input)
+            results.push({ name: server.name, ok: true })
+          }
+          sendJson(response, 200, { ok: results.every(item => item.ok), results, restartNeeded: true })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
