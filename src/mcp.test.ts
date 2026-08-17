@@ -44,6 +44,41 @@ describe('profile patch CRUD', () => {
     expect(rows[0].env).toEqual({ GITHUB_TOKEN: 'secret' })
   })
 
+  it('writes rows inside an anonymous insert list, never as bare entries', () => {
+    // The loader skips bare `- id:` entries whose target does not exist;
+    // only `- insert:` rows mount. This is the contract that made 0.1.2
+    // rows invisible to the agent.
+    const text = readFileSync(patch(), 'utf8')
+    expect(text).toContain('- insert:')
+    expect(text).not.toMatch(/^- id: mcp-/m)
+    expect(text).toMatch(/^ {4}- id: mcp-github$/m)
+  })
+
+  it('absorbs legacy bare rows into the insert list on the next write', () => {
+    writeFileSync(patch(), [
+      '- id: dsh-market',
+      '  config:',
+      '    allowRestart: false',
+      '- id: mcp-open-websearch',
+      '  name: "@deepseek-ai/dsh-mcp-client"',
+      '  config:',
+      '    serverName: open-websearch',
+      '    transport: stdio',
+      '    command: npx',
+      '',
+    ].join('\n'))
+
+    expect(listMcp(profile)).toHaveLength(1)
+    expect(listMcp(profile)[0]).toMatchObject({ id: 'mcp-open-websearch', serverName: 'open-websearch' })
+
+    upsertMcp(profile, { id: '', serverName: 'context7', transport: 'stdio', command: 'npx' })
+    const text = readFileSync(patch(), 'utf8')
+    expect(text).not.toMatch(/^- id: mcp-open-websearch/m)
+    expect(text).toMatch(/^ {4}- id: mcp-open-websearch$/m)
+    expect(text).toContain('dsh-market')
+    expect(listMcp(profile)).toHaveLength(2)
+  })
+
   it('preserves foreign rows and comments across edits', () => {
     writeFileSync(patch(), [
       '# user comment',
@@ -89,5 +124,12 @@ describe('profile patch CRUD', () => {
     expect(removeMcp(profile, 'mcp-github')).toBe(true)
     expect(listMcp(profile).find(row => row.id === 'mcp-github')).toBeUndefined()
     expect(removeMcp(profile, 'mcp-github')).toBe(false)
+  })
+
+  it('drops the insert entry once its last row is removed', () => {
+    for (const row of listMcp(profile)) removeMcp(profile, row.id)
+    const text = readFileSync(patch(), 'utf8')
+    expect(text).not.toContain('- insert:')
+    expect(listMcp(profile)).toHaveLength(0)
   })
 })

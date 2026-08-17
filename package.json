@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-capabilities",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Manage skills and MCP servers from the Web UI Settings. 在设置页管理 dsh 的技能与 MCP 服务器。",
   "type": "module",
   "main": "lib/index.js",
@@ -14,7 +14,14 @@
     "url": "https://github.com/qinyre/dsh-plugin-capabilities/issues"
   },
   "homepage": "https://github.com/qinyre/dsh-plugin-capabilities#readme",
-  "keywords": ["deepseek", "harness", "dsh", "dsh-plugin", "skills", "mcp"],
+  "keywords": [
+    "deepseek",
+    "harness",
+    "dsh",
+    "dsh-plugin",
+    "skills",
+    "mcp"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -36,7 +43,12 @@
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib", "src", "cordis.patch.yml", "LICENSE"],
+  "files": [
+    "lib",
+    "src",
+    "cordis.patch.yml",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "node scripts/build-node.mjs && node scripts/build-client.mjs && node scripts/verify-bundle.mjs",
     "prepare": "node scripts/build-node.mjs && node scripts/build-client.mjs && node scripts/verify-bundle.mjs",
