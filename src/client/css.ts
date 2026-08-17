@@ -43,5 +43,14 @@ export const CSS = `
 .dpc-checks{display:flex;gap:16px;font-size:13px;line-height:20px}
 .dpc-checks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .dpc-formError{margin:0;color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}
+/* Import dialog: wider than the host's 380px default; the server list gets
+   its own scroll so title, intro, and footer stay pinned. The doubled class
+   beats the host dialog's module CSS regardless of injection order. */
+.dpc-modalWide.dpc-modalWide{width:min(680px,100%)}
+.dpc-importScroll{display:flex;flex-direction:column;gap:14px;max-height:min(400px,52vh);overflow-y:auto;padding:2px 4px 2px 2px}
+.dpc-importGroup{display:flex;flex-direction:column;gap:8px}
+.dpc-importHead{display:flex;align-items:center;gap:8px;padding:0 2px}
+.dpc-importCount{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
+.dpc-importAll{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary);cursor:pointer}
 @media(max-width:680px){.dpc-cards{grid-template-columns:minmax(0,1fr)}}
 `

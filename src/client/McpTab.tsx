@@ -44,6 +44,26 @@ interface EditorState {
   headers: string
 }
 
+/** One import entry together with its index in the flat state array —
+ *  checkbox handlers rewrite the flat array, so indices must survive grouping. */
+type ImportItem = { server: ImportedServerView; existing: boolean; checked: boolean }
+
+/** Group import candidates by source agent, known agents first. */
+export function importGroups(items: ImportItem[]): Array<{ agent: string; label: string; items: Array<{ item: ImportItem; index: number }> }> {
+  const label = (agent: string) => agent === 'claude-code' ? 'Claude Code' : agent === 'codex' ? 'Codex' : agent
+  const order = ['claude-code', 'codex']
+  const agents = [...new Set(items.map(item => item.server.agent))]
+    .sort((a, b) => {
+      const rank = (agent: string) => { const at = order.indexOf(agent); return at === -1 ? order.length : at }
+      return rank(a) - rank(b) || a.localeCompare(b)
+    })
+  return agents.map(agent => ({
+    agent,
+    label: label(agent),
+    items: items.map((item, index) => ({ item, index })).filter(({ item }) => item.server.agent === agent),
+  }))
+}
+
 /** KEY=VALUE / KEY: VALUE lines to a map. */
 function parsePairs(text: string, separator: ':' | '='): Record<string, string> {
   const map: Record<string, string> = {}
@@ -394,41 +414,73 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         open={importOpen}
         onClose={() => setImportOpen(false)}
         title={t('importServers')}
+        className="dpc-modalWide"
       >
         <div className="dpc-form">
           <p className="dpc-intro" style={{ margin: 0 }}>{t('importIntro')}</p>
           {importItems === null && <p className="dpc-empty">{t('loading')}</p>}
           {importItems !== null && importItems.length === 0 && <p className="dpc-empty">{t('importEmpty')}</p>}
           {importItems !== null && importItems.length > 0 && (
-            <ul className="dpc-cards" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
-              {importItems.map((item, index) => (
-                <li className="dpc-card" key={`${item.server.agent}/${item.server.name}`} style={{ opacity: item.existing ? 0.55 : 1 }}>
-                  <div className="dpc-cardTop">
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, cursor: item.existing ? 'default' : 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={item.checked}
-                        disabled={item.existing}
-                        onChange={(event) => {
-                          const next = importItems.slice()
-                          next[index] = { ...item, checked: event.target.checked }
-                          setImportItems(next)
-                        }}
-                      />
-                      <strong className="dpc-cardTitle" title={item.server.name}>{item.server.name}</strong>
-                    </label>
-                    <span className="dpc-tag" data-kind="source">{item.server.agent === 'claude-code' ? 'Claude Code' : 'Codex'}</span>
-                    <span className="dpc-tag">{item.server.transport}</span>
-                    {item.existing && <span className="dpc-tag">{t('importExisting')}</span>}
-                  </div>
-                  <p className="dpc-cardDesc">
-                    {item.server.transport === 'stdio'
-                      ? `${item.server.command ?? ''} ${(item.server.args ?? []).join(' ')}`
-                      : item.server.url ?? ''}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <div className="dpc-importScroll">
+              {importGroups(importItems).map(group => {
+                const selectable = group.items
+                  .filter(({ item }) => !item.existing)
+                  .map(({ index }) => index)
+                const allChecked = selectable.length > 0
+                  && selectable.every(index => importItems[index].checked)
+                return (
+                  <section className="dpc-importGroup" key={group.agent}>
+                    <div className="dpc-importHead">
+                      <span className="dpc-tag" data-kind="source">{group.label}</span>
+                      <span className="dpc-importCount">{group.items.length}</span>
+                      {selectable.length > 0 && (
+                        <label className="dpc-importAll">
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            onChange={(event) => {
+                              const next = importItems.slice()
+                              for (const index of selectable) next[index] = { ...next[index], checked: event.target.checked }
+                              setImportItems(next)
+                            }}
+                          />
+                          {t('importSelectAll')}
+                        </label>
+                      )}
+                    </div>
+                    <ul className="dpc-cards" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
+                      {group.items.map(({ item, index }) => {
+                        const command = item.server.transport === 'stdio'
+                          ? `${item.server.command ?? ''} ${(item.server.args ?? []).join(' ')}`.trim()
+                          : item.server.url ?? ''
+                        return (
+                          <li className="dpc-card" key={`${item.server.agent}/${item.server.name}`} style={{ opacity: item.existing ? 0.55 : 1 }}>
+                            <div className="dpc-cardTop">
+                              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, cursor: item.existing ? 'default' : 'pointer' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={item.checked}
+                                  disabled={item.existing}
+                                  onChange={(event) => {
+                                    const next = importItems.slice()
+                                    next[index] = { ...item, checked: event.target.checked }
+                                    setImportItems(next)
+                                  }}
+                                />
+                                <strong className="dpc-cardTitle" title={item.server.name}>{item.server.name}</strong>
+                              </label>
+                              <span className="dpc-tag">{item.server.transport}</span>
+                              {item.existing && <span className="dpc-tag">{t('importExisting')}</span>}
+                            </div>
+                            <p className="dpc-cardDesc" title={command}>{command}</p>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+                )
+              })}
+            </div>
           )}
           {formError !== null && <p className="dpc-formError">{formError}</p>}
           <div className="dpc-cardRow">
