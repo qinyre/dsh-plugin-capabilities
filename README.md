@@ -1,20 +1,13 @@
 # dsh-plugin-capabilities
 
-A dsh plugin that adds "Skills" and "MCP" tabs to the Web UI's Settings page, so the skill catalog and the profile's MCP servers can be managed in place — including importing MCP servers and picking up skills from Claude Code and Codex.
+[![npm version](https://img.shields.io/npm/v/dsh-plugin-capabilities)](https://www.npmjs.com/package/dsh-plugin-capabilities)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-一个 dsh 插件，在 Web UI 设置页的插件区新增「技能」与「MCP」两个标签页：技能目录和 profile 的 MCP 服务器直接在页面上查看与维护，不必手工编辑文件；来自 Claude Code、Codex 等其他 agent 的技能与 MCP 配置也能一并纳入。`dsh web` 与 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 均可使用。
-
-## 安装
-
-```sh
-dsh plugin --profile web add dsh-plugin-capabilities
-```
-
-安装后打开 设置 → 插件，即可看到新增的「技能」与「MCP」标签页。
-
-开发时也可以直接安装本地源码检出：`dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities`。包内的 `prepare` 脚本会自动构建出 `lib/`。
+在 dsh 设置页管理技能与 MCP 服务器。本插件在插件区新增「技能」「MCP」两个标签页，技能目录和 profile 的 MCP 服务器行都能直接在页面上查看与维护，不必手工编辑文件；来自 Claude Code、Codex 等其他 agent 的技能与 MCP 配置也能一并纳入。`dsh web` 与 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 均可使用。
 
 ## 技能
+
+![「技能」标签页](docs/images/screenshot-skills.png)
 
 「技能」页列出 dsh 当前发现的全部技能，包括名称、描述、来源（项目、用户、内置、运行时、自定义）和调用策略。用户级技能存放在 `$DSH_HOME/skills`，可以在这里新建、编辑、删除：frontmatter 与正文分开填写，保存后写入对应的 `SKILL.md`。技能目录处于文件系统监听之下，保存后数秒内条目就会出现在列表里，无需重启。项目目录和内置包等来源的技能以只读方式展示，可以查看全文。
 
@@ -22,11 +15,21 @@ dsh plugin --profile web add dsh-plugin-capabilities
 
 ## MCP
 
+![「MCP」标签页](docs/images/screenshot-mcp.png)
+
 「MCP」页管理 profile patch 中的 MCP 服务器行，每行对应一个 `@deepseek-ai/dsh-mcp-client` 实例。stdio 服务器填写命令与参数，streamable-http 服务器填写 URL，编辑、停用、移除都在页面上完成。YAML 读写采用文档级 API，文件中的其他行与注释不受影响。
 
 也可以从其他 agent 导入：一键扫描 Claude Code（`~/.claude.json`、`~/.claude/settings.json`）与 Codex（`~/.codex/config.toml`）的 MCP 配置，勾选所需条目后转为本 profile 的服务器行。stdio 与 http 两种传输都会处理，已存在的同名服务器置灰跳过。需要注意的是，Claude 配置里的 `${VAR}` 环境变量引用按字面值导入，如有需要请在导入后手动改回。
 
 MCP 行的变更需要重启 dsh 才会进入组合，页面上会显示待重启横幅。在 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 中可以点击横幅上的按钮，由桌面壳层重启受监督的 sidecar；直接运行 `dsh web` 时自行重启即可。
+
+## 安装
+
+```sh
+dsh plugin --profile web add dsh-plugin-capabilities
+```
+
+安装后打开 设置 → 插件，即可看到新增的「技能」与「MCP」标签页。开发时也可以直接安装本地源码检出：`dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities`，包内的 `prepare` 脚本会自动构建出 `lib/`。
 
 ## 工作原理
 
