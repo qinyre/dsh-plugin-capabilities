@@ -4,6 +4,15 @@
 
 export const CSS = `
 .dpc-section{display:flex;flex-direction:column;gap:14px;width:100%;max-width:760px;color:var(--dsw-alias-label-primary)}
+.dpc-heading{margin:0;font-size:18px;line-height:26px;font-weight:600}
+/* Top-level section's internal tabs — same underline-tab look as the host's
+   Plugins section so the promoted placement still reads as one family. */
+.dpc-tabs{display:flex;align-items:flex-end;gap:22px;border-bottom:1px solid var(--dsw-alias-border-l2);margin-top:2px}
+.dpc-tab{position:relative;border:0;padding:7px 1px 9px;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:13px;line-height:20px;cursor:pointer}
+.dpc-tab:hover,.dpc-tab[data-active='true']{color:var(--dsw-alias-label-primary)}
+.dpc-tab[data-active='true']::after,.dpc-tab:focus-visible::after{position:absolute;right:0;bottom:-1px;left:0;height:2px;border-radius:2px 2px 0 0;background:var(--dsw-alias-label-primary);content:''}
+.dpc-tab:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:2px;color:var(--dsw-alias-label-primary)}
+.dpc-tabPanel{min-width:0;padding-top:2px}
 .dpc-head{display:flex;align-items:center;gap:8px}
 .dpc-head h3{margin:0;font-size:13px;line-height:20px;font-weight:600}
 .dpc-head>svg{flex:none;color:var(--dsw-alias-label-tertiary)}
@@ -37,8 +46,8 @@ export const CSS = `
 .dpc-label{display:flex;flex-direction:column;gap:4px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}
 .dpc-label>span:first-child{color:var(--dsw-alias-label-tertiary)}
 .dpc-input,.dpc-textarea,.dpc-select{width:100%;box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:7px 10px;outline:none;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px}
-.dpc-textarea{min-height:120px;resize:vertical;font-family:var(--ds-font-family-code);line-height:1.5}
-.dpc-textarea[data-short='true']{min-height:64px}
+.dpc-textarea{min-height:240px;resize:vertical;font-family:var(--ds-font-family-code);line-height:1.5}
+.dpc-textarea[data-short='true']{min-height:96px}
 .dpc-input:focus-visible,.dpc-textarea:focus-visible,.dpc-select:focus-visible{border-color:var(--dsw-alias-state-business-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--dsw-alias-state-business-primary) 18%,transparent)}
 .dpc-checks{display:flex;gap:16px;font-size:13px;line-height:20px}
 .dpc-checks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
@@ -47,6 +56,11 @@ export const CSS = `
    its own scroll so title, intro, and footer stay pinned. The doubled class
    beats the host dialog's module CSS regardless of injection order. */
 .dpc-modalWide.dpc-modalWide{width:min(680px,100%)}
+/* Editor dialogs (new skill / server): 640px wide so markdown bodies and
+   command/arg/env lines stop wrapping mid-token; the content column scrolls
+   on short viewports instead of clipping past the dialog edge. */
+.dpc-modalForm.dpc-modalForm{width:min(640px,100%)}
+.dpc-modalScroll.dpc-modalScroll{max-height:calc(100vh - 160px);overflow-y:auto}
 .dpc-importScroll{display:flex;flex-direction:column;gap:14px;max-height:min(400px,52vh);overflow-y:auto;padding:2px 4px 2px 2px}
 .dpc-importGroup{display:flex;flex-direction:column;gap:8px}
 .dpc-importHead{display:flex;align-items:center;gap:8px;padding:0 2px}

@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/dsh-plugin-capabilities)](https://www.npmjs.com/package/dsh-plugin-capabilities)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-在 dsh 设置页管理技能与 MCP 服务器。本插件在插件区新增「技能」「MCP」两个标签页，技能目录和 profile 的 MCP 服务器行都能直接在页面上查看与维护，不必手工编辑文件；来自 Claude Code、Codex 等其他 agent 的技能与 MCP 配置也能一并纳入。`dsh web` 与 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 均可使用。
+在 dsh 设置页管理技能与 MCP 服务器。本插件在设置里新增一级分区「技能与 MCP」（与「通用设置」「模型」并列），内含「技能」「MCP」两个标签页，技能目录和 profile 的 MCP 服务器行都能直接在页面上查看与维护，不必手工编辑文件；来自 Claude Code、Codex 等其他 agent 的技能与 MCP 配置也能一并纳入。`dsh web` 与 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 均可使用。
 
 ## 技能
 
@@ -29,7 +29,7 @@ MCP 行的变更需要重启 dsh 才会进入组合。MCP 页头部有常驻的�
 dsh plugin --profile web add dsh-plugin-capabilities
 ```
 
-安装后打开 设置 → 插件，即可看到新增的「技能」与「MCP」标签页。开发时也可以直接安装本地源码检出：`dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities`，包内的 `prepare` 脚本会自动构建出 `lib/`。
+安装后打开设置，即可在一级导航里看到「技能与 MCP」分区（位于「模型」与「插件」之间）。开发时也可以直接安装本地源码检出：`dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities`，包内的 `prepare` 脚本会自动构建出 `lib/`。
 
 ## 工作原理
 

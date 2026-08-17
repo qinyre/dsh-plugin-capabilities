@@ -1,6 +1,7 @@
 /** zh/en dictionaries for the Settings capabilities tabs. */
 
 export const zh = {
+  sectionNav: '技能与 MCP',
   skillsTab: '技能',
   mcpTab: 'MCP',
   skillsTitle: '技能管理',
@@ -72,6 +73,7 @@ export const zh = {
 }
 
 export const en = {
+  sectionNav: 'Skills & MCP',
   skillsTab: 'Skills',
   mcpTab: 'MCP',
   skillsTitle: 'Skills',

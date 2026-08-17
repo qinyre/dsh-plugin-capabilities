@@ -320,6 +320,8 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         open={editor !== null}
         onClose={() => setEditor(null)}
         title={editor !== null && editor.id !== '' ? t('editServer') : t('addServer')}
+        className="dpc-modalForm"
+        contentClassName="dpc-modalScroll"
       >
         {editor !== null && (
           <div className="dpc-form">

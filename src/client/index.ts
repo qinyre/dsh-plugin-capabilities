@@ -1,9 +1,11 @@
-/** dsh-plugin-capabilities client entry: contributes the “技能/Skills” and
- * “MCP” tabs into Settings → Plugins. Calls the host routes with fetch. */
+/** dsh-plugin-capabilities client entry: contributes the top-level
+ * “技能与 MCP” section into Settings (beside 通用设置/模型, with Skills and
+ * MCP as internal tabs). Calls the host routes with fetch. */
 
 import { createElement as h } from 'react'
-import { McpTab, type McpInjected, type McpRow } from './McpTab.tsx'
-import { SkillsTab, type SkillsInjected, type SkillRowView } from './SkillsTab.tsx'
+import { CapabilitiesSection } from './CapabilitiesSection.tsx'
+import type { McpInjected, McpRow } from './McpTab.tsx'
+import type { SkillsInjected, SkillRowView } from './SkillsTab.tsx'
 import { zh, en } from './locales.ts'
 
 /** Locale dictionary namespace owned by this plugin. */
@@ -91,25 +93,16 @@ export function apply(ctx: CapabilitiesClientContext): void {
     desktop: window.dshDesktop !== undefined,
   }
 
-  ctx.slots.inject('settings.plugins.tab', () => {
+  // One top-level nav entry (between 模型 and 插件), not a tab under the
+  // Plugins section — the section component owns its internal Skills/MCP
+  // tabs directly, so nothing registers into settings.plugins.tab anymore.
+  ctx.slots.inject('settings.section', () => {
     return ctx.slots.register({
-      name: 'settings.plugins.tab',
-      id: 'capabilities-skills',
-      order: 30,
-      label: () => t('skillsTab'),
+      name: 'settings.section',
+      id: 'capabilities',
+      order: 12,
+      label: () => t('sectionNav'),
       locale: NS,
-      inject: () => skillsInjected,
-    }, () => h(SkillsTab, { t, injected: skillsInjected }))
-  })
-
-  ctx.slots.inject('settings.plugins.tab', () => {
-    return ctx.slots.register({
-      name: 'settings.plugins.tab',
-      id: 'capabilities-mcp',
-      order: 40,
-      label: () => t('mcpTab'),
-      locale: NS,
-      inject: () => mcpInjected,
-    }, () => h(McpTab, { t, injected: mcpInjected }))
+    }, () => h(CapabilitiesSection, { t, skills: skillsInjected, mcp: mcpInjected }))
   })
 }

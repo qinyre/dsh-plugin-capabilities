@@ -213,6 +213,8 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
         open={editor !== null}
         onClose={() => setEditor(null)}
         title={editor === null ? '' : editor.mode === 'create' ? t('newSkill') : editor.mode === 'edit' ? t('editSkill') : t('viewSkill')}
+        className="dpc-modalForm"
+        contentClassName="dpc-modalScroll"
       >
         {editor !== null && (
           <div className="dpc-form">
