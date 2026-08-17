@@ -80,7 +80,14 @@ export function apply(ctx: CapabilitiesClientContext): void {
     scanImport: () => fetchJson<{ servers: ImportedServerView[]; existing: string[] }>('/dsh-plugin-capabilities/import/scan'),
     applyImport: (items: Array<{ agent: string; name: string }>) =>
       post('/dsh-plugin-capabilities/import/apply', { items }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>,
-    restart: (): void => { window.dshDesktop?.restartSidecar?.() },
+    restart: async (): Promise<void> => {
+      if (window.dshDesktop !== undefined) {
+        window.dshDesktop.restartSidecar?.()
+        return
+      }
+      // 独立 dsh web：自重启路由。连接在关停途中断开属预期，不算失败。
+      try { await post('/dsh-plugin-capabilities/restart', {}) } catch { /* dying mid-restart is expected */ }
+    },
     desktop: window.dshDesktop !== undefined,
   }
 

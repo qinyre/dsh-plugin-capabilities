@@ -21,7 +21,7 @@
 
 也可以从其他 agent 导入：一键扫描 Claude Code（`~/.claude.json`、`~/.claude/settings.json`）与 Codex（`~/.codex/config.toml`）的 MCP 配置，勾选所需条目后转为本 profile 的服务器行。stdio 与 http 两种传输都会处理，已存在的同名服务器置灰跳过。需要注意的是，Claude 配置里的 `${VAR}` 环境变量引用按字面值导入，如有需要请在导入后手动改回。
 
-MCP 行的变更需要重启 dsh 才会进入组合，页面上会显示待重启横幅。在 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 中可以点击横幅上的按钮，由桌面壳层重启受监督的 sidecar；直接运行 `dsh web` 时自行重启即可。
+MCP 行的变更需要重启 dsh 才会进入组合。MCP 页头部有常驻的「重启」按钮，变更后无需离开界面：在 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 中由桌面壳层重启受监督的 sidecar，完成后窗口自动重载；直接运行 `dsh web` 时插件会拉起一个替代进程再退出自身，页面在恢复后自动刷新——若启动时端口是随机的，按横幅提示在终端查看新地址。重启会中断正在进行的回合，点击后会先弹出确认。
 
 ## 安装
 

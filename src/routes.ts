@@ -3,6 +3,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { scanAllMcp } from './agents.ts'
 import { readJsonBody, sameOrigin, sendJson } from './http.ts'
+import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest } from './restart.ts'
 import { deleteSkill, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
 import type { CapabilitiesHost } from './types.ts'
@@ -277,6 +278,29 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: { profil
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/restart',
+      handler: (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        // 进程控制：仅直接的同源回环请求；桌面模式下重启归壳层所有。
+        if (!trustedRestartRequest(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        if (restartOwnedByShell()) {
+          sendJson(response, 409, { error: 'restart is owned by the desktop shell' })
+          return
+        }
+        const { pid, replacementPid, logOut } = scheduleRestart(dshLaunch())
+        sendJson(response, 200, { ok: true, pid, replacementPid, logOut })
       },
     }),
   ]

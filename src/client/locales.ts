@@ -62,6 +62,11 @@ export const zh = {
   restartDesktopHint: '重启由桌面应用负责：托盘菜单「重启服务」。',
   restartOtherHint: '重启方式：关闭当前 dsh 进程后重新运行。',
   restartNow: '重启服务',
+  restart: '重启',
+  restartConfirmTitle: '重启 dsh？',
+  restartConfirmBody: '重启会中断正在进行的回合，未保存的输入可能丢失；MCP 行的变更将在重启后生效。',
+  restarting: '正在重启，恢复后将自动刷新页面…',
+  restartPortHint: '若重启后页面长时间未恢复，可能是端口已变化：在终端查看新地址后打开。',
   failed: '操作失败',
 }
 
@@ -127,5 +132,10 @@ export const en = {
   restartDesktopHint: 'The desktop app owns restarts: use the tray “Restart service”.',
   restartOtherHint: 'Restart by closing this dsh process and running it again.',
   restartNow: 'Restart service',
+  restart: 'Restart',
+  restartConfirmTitle: 'Restart dsh?',
+  restartConfirmBody: 'Restarting interrupts any running turn and may lose unsaved input; pending MCP changes apply after the restart.',
+  restarting: 'Restarting — the page will reload once the host is back…',
+  restartPortHint: 'If the page does not recover, the port may have changed: check the terminal for the new URL.',
   failed: 'Operation failed',
 }

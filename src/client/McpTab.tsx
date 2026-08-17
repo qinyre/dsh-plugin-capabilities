@@ -28,7 +28,7 @@ export interface McpInjected {
   remove(id: string): Promise<{ ok: boolean }>
   scanImport(): Promise<{ servers: ImportedServerView[]; existing: string[] }>
   applyImport(items: Array<{ agent: string; name: string }>): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>
-  restart(): void
+  restart(): Promise<void>
   desktop: boolean
 }
 
@@ -71,6 +71,8 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const [importItems, setImportItems] = useState<Array<{ server: ImportedServerView; existing: boolean; checked: boolean }> | null>(null)
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState(false)
+  const [restartConfirm, setRestartConfirm] = useState(false)
+  const [restarting, setRestarting] = useState(false)
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
@@ -203,15 +205,36 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     }
   }
 
+  const doRestart = (): void => {
+    setRestartConfirm(false)
+    setRestarting(true)
+    void injected.restart()
+    // 桌面模式：壳层重启完成后会重载窗口。独立模式：轮询本源，恢复即刷新。
+    if (injected.desktop) return
+    const deadline = Date.now() + 60_000
+    const poll = (): void => {
+      if (Date.now() > deadline) return
+      window.setTimeout(() => {
+        void injected.list().then(
+          () => { window.location.reload() },
+          () => { poll() },
+        )
+      }, 1500)
+    }
+    window.setTimeout(poll, 3000)
+  }
+
   const restartBanner = (
     <div className="dpc-banner" data-kind="info" role="status">
       <StateDot state="ongoing" size={10} />
       <div className="dpc-bannerBody">
-        <span>{t('restartNeeded')}</span>
+        <span>{restarting ? t('restarting') : t('restartNeeded')}</span>
         <span className="dpc-bannerHint">
-          {injected.desktop
-            ? <>{t('restartDesktopHint')}{' '}<Button variant="outline" size="sm" onClick={injected.restart}>{t('restartNow')}</Button></>
-            : t('restartOtherHint')}
+          {restarting
+            ? (!injected.desktop && t('restartPortHint'))
+            : injected.desktop
+              ? <>{t('restartDesktopHint')}{' '}<Button variant="outline" size="sm" onClick={() => setRestartConfirm(true)}>{t('restartNow')}</Button></>
+              : t('restartOtherHint')}
         </span>
       </div>
     </div>
@@ -225,6 +248,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         <IconApiOutline14 aria-hidden="true" />
         <h3>{t('mcpTitle')}</h3>
         <span className="dpc-spacer" />
+        <Button variant="ghost" size="sm" disabled={restarting} onClick={() => setRestartConfirm(true)}>{t('restart')}</Button>
         <Button variant="ghost" size="sm" onClick={() => void openImport()}>{t('importServers')}</Button>
         <Button variant="primary" size="sm" onClick={openCreate}>{t('addServer')}</Button>
       </div>
@@ -236,7 +260,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
           <div className="dpc-bannerBody"><span>{outcome.text}</span></div>
         </div>
       )}
-      {pending && restartBanner}
+      {(pending || restarting) && restartBanner}
 
       <div className="dpc-listHead">
         <h3>{t('mcpTab')}</h3>
@@ -350,6 +374,20 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         }
       >
         <p>{t('removeWarn')}</p>
+      </Modal>
+
+      <Modal
+        open={restartConfirm}
+        onClose={() => setRestartConfirm(false)}
+        title={t('restartConfirmTitle')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setRestartConfirm(false)}>{t('cancel')}</Button>
+            <Button variant="primary" onClick={doRestart}>{t('restartNow')}</Button>
+          </>
+        }
+      >
+        <p>{t('restartConfirmBody')}</p>
       </Modal>
 
       <Modal
