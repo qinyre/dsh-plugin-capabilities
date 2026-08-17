@@ -105,11 +105,18 @@ describe.skipIf(process.env.DSH_DESKTOP_PLUGIN_SMOKE !== '1' || !guard || !nodeO
     const post = (path: string, body: unknown): Promise<Response> =>
       fetch(base + path, { method: 'POST', headers: origin, body: JSON.stringify(body) })
 
-    // 3. Skills list serves the catalog with the editable flag.
+    // 3. Skills list serves the catalog with the editable flag — including the
+    // package's vendored skills, which arrive read-only from the custom root.
     const skillsResponse = await fetch(`${base}/dsh-plugin-capabilities/skills`)
     expect(skillsResponse.status).toBe(200)
     const skillsBody = await skillsResponse.json() as { skills?: Array<{ name: string; source: string; editable: boolean }> }
     expect(Array.isArray(skillsBody.skills)).toBe(true)
+    for (const vendored of ['skill-creator', 'find-skills']) {
+      const row = skillsBody.skills?.find(skill => skill.name === vendored)
+      expect(row, `${vendored} in catalog`).toBeDefined()
+      expect(row?.editable).toBe(false)
+      expect(row?.source).toBe('custom')
+    }
 
     // 4. Write a user skill; the watched root picks it up into the catalog.
     const save = await post('/dsh-plugin-capabilities/skill/save', {

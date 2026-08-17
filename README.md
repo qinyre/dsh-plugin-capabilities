@@ -13,6 +13,8 @@
 
 如果机器上存在 Claude Code 或 Codex 的技能目录（`~/.claude/skills`、`~/.codex/skills`），它们会作为额外的扫描根自动进入目录。文件不会被复制，改动留在原地，两边实时同步。
 
+本插件还自带两条只读技能：skill-creator（创建与迭代改进技能，来自 [anthropics/skills](https://github.com/anthropics/skills)，Apache-2.0）与 find-skills（发现并安装社区技能，来自 [vercel-labs/skills](https://github.com/vercel-labs/skills)，MIT）。它们随插件进入扫描目录，设置页里来源显示为「自定义」，会话中可直接调用；升级插件即更新、卸载插件即移除，不向 `DSH_HOME` 写入任何文件。
+
 ## MCP
 
 ![「MCP」标签页](docs/images/screenshot-mcp.png)
