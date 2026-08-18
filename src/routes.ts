@@ -1,6 +1,7 @@
 /** HTTP routes bridging the Settings UI to the capabilities manager. */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { mkdirSync } from 'node:fs'
 import { scanAllMcp } from './agents.ts'
 import { readJsonBody, sameOrigin, sendJson } from './http.ts'
 import { loadMarketIndex, type MarketMcpServer } from './market.ts'
@@ -199,8 +200,11 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           let dir: string | undefined
           if (body.target === 'user-skills') {
             dir = userSkillsDir()
+            // 用户还没建过任何技能时该目录不存在；「打开技能目录」应按需创建而非报错。
+            mkdirSync(dir, { recursive: true })
           } else if (body.target === 'plugin-state') {
             dir = pluginStateDir()
+            mkdirSync(dir, { recursive: true })
           } else if (body.target === 'skill') {
             if (typeof body.name !== 'string') {
               sendJson(response, 400, { error: 'name is required' })

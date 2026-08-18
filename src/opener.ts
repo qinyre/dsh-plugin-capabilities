@@ -15,9 +15,17 @@ export function openDirectory(dir: string): boolean {
   } catch {
     return false
   }
+  if (process.platform === 'win32') {
+    // explorer 对正斜杠路径会静默回落到默认文件夹（实测打开成了「文档」），必须喂反斜杠。
+    dir = dir.split('/').join('\\')
+  }
   const launcher = process.platform === 'win32' ? 'explorer' : process.platform === 'darwin' ? 'open' : 'xdg-open'
   try {
-    const child = spawn(launcher, [dir], { detached: true, stdio: 'ignore', windowsHide: true })
+    // GUI 启动器不能带 windowsHide：该 flag 把 SW_HIDE 写进 STARTUPINFO，explorer 的
+    // 首个窗口据此创建为隐藏——实机表现是「打开目录」点了没反应，窗口其实开了。
+    const child = spawn(launcher, [dir], { detached: true, stdio: 'ignore' })
+    // 启动器解析失败时 'error' 异步到达；没有监听会升级成 uncaughtException 炸掉 sidecar。
+    child.once('error', () => {})
     child.unref()
     return true
   } catch {

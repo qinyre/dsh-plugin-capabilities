@@ -199,10 +199,11 @@ describe.skipIf(process.env.DSH_DESKTOP_PLUGIN_SMOKE !== '1' || !guard || !nodeO
       expect(after.servers.some(row => row.serverName === 'memory')).toBe(true)
     }
 
-    // 9. Open-folder route resolves server-side and answers ok (no GUI
-    // assertion beyond the route not failing headless).
+    // 9. Open-folder route resolves server-side and answers ok; the skills
+    // home is created on demand, so a fresh DSH_HOME opens (not 422s).
     const open = await post('/dsh-plugin-capabilities/open', { target: 'user-skills' })
-    expect([200, 422]).toContain(open.status)
+    expect(open.status).toBe(200)
+    expect(existsSync(join(smokeRoot, 'skills'))).toBe(true)
     const openBad = await post('/dsh-plugin-capabilities/open', { target: 'root', id: 'does-not-exist' })
     expect(openBad.status).toBe(404)
   })
