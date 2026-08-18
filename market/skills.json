@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-18",
+  "repos": [
+    {
+      "id": "anthropics-skills",
+      "name": "Anthropic Official Skills",
+      "nameZh": "Anthropic 官方技能集",
+      "description": "Document skills (docx/pdf/pptx/xlsx), artifacts-builder, canvas-design, mcp-builder and more from Anthropic's skills repository.",
+      "descriptionZh": "Anthropic 官方技能仓库：文档技能（docx/pdf/pptx/xlsx）、artifacts-builder、canvas-design、mcp-builder 等。",
+      "url": "https://github.com/anthropics/skills",
+      "homepage": "https://github.com/anthropics/skills",
+      "skillCount": 13
+    },
+    {
+      "id": "obra-superpowers",
+      "name": "Superpowers",
+      "nameZh": "Superpowers 工作流技能",
+      "description": "Jesse Vincent's curated workflow skills: brainstorming, systematic debugging, test-driven development, writing plans, and the dispatch/review loop around them.",
+      "descriptionZh": "Jesse Vincent 维护的工作流技能集：头脑风暴、系统化调试、测试驱动开发、撰写计划及配套的调度/评审流程。",
+      "url": "https://github.com/obra/superpowers",
+      "homepage": "https://github.com/obra/superpowers",
+      "skillCount": 18
+    },
+    {
+      "id": "vercel-labs-skills",
+      "name": "Vercel Labs Skills",
+      "nameZh": "Vercel Labs 技能",
+      "description": "Small practical set from Vercel Labs, including find-skills (discover and install community skills).",
+      "descriptionZh": "Vercel Labs 的实用小技能集，包含 find-skills（发现并安装社区技能）。",
+      "url": "https://github.com/vercel-labs/skills",
+      "homepage": "https://github.com/vercel-labs/skills",
+      "skillCount": 4
+    }
+  ]
+}

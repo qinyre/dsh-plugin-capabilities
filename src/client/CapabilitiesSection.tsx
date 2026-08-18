@@ -1,12 +1,12 @@
 /** Settings top-level “技能与 MCP” section: one nav entry beside 通用设置 and
- * 模型, with the Skills and MCP pages as internal tabs. The two pages are the
- * same components the Plugins section used to host — promoted a level instead
- * of squeezed under 插件. Pure composition; data still arrives through the
- * injected faces. */
+ * 模型, with the Skills, MCP, and 市场 pages as internal tabs. The pages are
+ * pure composition; data still arrives through the injected faces. */
 
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import { CSS } from './css.ts'
+import { MarketTab } from './MarketTab.tsx'
+import type { MarketInjected } from './MarketTab.tsx'
 import { McpTab } from './McpTab.tsx'
 import type { McpInjected } from './McpTab.tsx'
 import { SkillsTab } from './SkillsTab.tsx'
@@ -17,18 +17,20 @@ export function CapabilitiesSection(props: {
   t: Translate
   skills: SkillsInjected
   mcp: McpInjected
+  market: MarketInjected
 }): ReactElement {
-  const { t, skills, mcp } = props
+  const { t, skills, mcp, market } = props
   const tabsId = useId()
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
   const rows = [
     { id: 'skills', label: t('skillsTab') },
     { id: 'mcp', label: t('mcpTab') },
+    { id: 'market', label: t('marketTab') },
   ]
   const [activeId, setActiveId] = useState('skills')
   // The skills page mounts immediately; a tab mounts only when first
   // selected, then stays mounted while hidden so editor drafts and outcome
-  // banners survive switching between the two views.
+  // banners survive switching between the views.
   const [visitedIds, setVisitedIds] = useState<ReadonlySet<string>>(() => new Set(['skills']))
 
   useEffect(() => {
@@ -93,7 +95,9 @@ export function CapabilitiesSection(props: {
             >
               {row.id === 'skills'
                 ? <SkillsTab t={t} injected={skills} />
-                : <McpTab t={t} injected={mcp} />}
+                : row.id === 'mcp'
+                  ? <McpTab t={t} injected={mcp} />
+                  : <MarketTab t={t} market={market} mcp={mcp} />}
             </div>
           )
         })}

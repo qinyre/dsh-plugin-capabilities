@@ -82,6 +82,128 @@ function mapToPairs(map: Record<string, string> | undefined, separator: string):
   return Object.entries(map).map(([key, value]) => `${key}${separator}${value.includes('\n') ? JSON.stringify(value) : value}`).join('\n')
 }
 
+/** YAML double-quoted scalar (JSON syntax is valid YAML); plain for simple ids. */
+function yamlScalar(value: string): string {
+  return /^[A-Za-z0-9_./@-]+$/.test(value) ? value : JSON.stringify(value)
+}
+
+/** Shape the profile patch row exactly as the host would persist it (preview). */
+export function mcpRowYaml(input: { serverName: string; transport: 'stdio' | 'streamable-http'; command?: string; args?: string[]; env?: Record<string, string>; url?: string; headers?: Record<string, string> }): string {
+  const name = input.serverName.trim() === '' ? 'server-name' : input.serverName.trim()
+  const lines = [
+    '- insert:',
+    `    - id: mcp-${name}`,
+    "      name: '@deepseek-ai/dsh-mcp-client'",
+    '      config:',
+    `        serverName: ${yamlScalar(name)}`,
+    `        transport: ${input.transport}`,
+  ]
+  if (input.transport === 'stdio') {
+    lines.push(`        command: ${yamlScalar(input.command ?? '')}`)
+    const args = input.args ?? []
+    if (args.length > 0) {
+      lines.push('        args:')
+      for (const arg of args) lines.push(`          - ${yamlScalar(arg)}`)
+    }
+    const env = input.env ?? {}
+    if (Object.keys(env).length > 0) {
+      lines.push('        env:')
+      for (const [key, value] of Object.entries(env)) lines.push(`          ${yamlScalar(key)}: ${yamlScalar(value)}`)
+    }
+  } else {
+    lines.push(`        url: ${yamlScalar(input.url ?? '')}`)
+    const headers = input.headers ?? {}
+    if (Object.keys(headers).length > 0) {
+      lines.push('        headers:')
+      for (const [key, value] of Object.entries(headers)) lines.push(`          ${yamlScalar(key)}: ${yamlScalar(value)}`)
+    }
+  }
+  return lines.join('\n')
+}
+
+/** The equivalent mcpServers JSON a foreign config or docs page would show. */
+export function mcpJsonExample(transport: 'stdio' | 'streamable-http'): string {
+  const entry = transport === 'stdio'
+    ? {
+        command: 'npx',
+        args: ['-y', '@example/mcp-server'],
+        env: { API_KEY: 'value' },
+      }
+    : {
+        type: 'http',
+        url: 'https://example.com/mcp',
+        headers: { Authorization: 'Bearer <token>' },
+      }
+  return JSON.stringify({ mcpServers: { 'server-name': entry } }, null, 2)
+}
+
+/** Fields parsed out of a pasted MCP JSON config (any common shape). */
+export interface ParsedMcpJson {
+  serverName?: string
+  transport: 'stdio' | 'streamable-http'
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  url?: string
+  headers?: Record<string, string>
+}
+
+/** Parse one MCP server from pasted JSON: a bare entry, a dsh row, or a
+ *  `{"mcpServers": {…}}` wrapper (first entry wins). Returns the reason on bad input. */
+export function parseMcpJson(text: string): ParsedMcpJson | { error: string } {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return { error: 'not valid JSON' }
+  }
+  if (typeof parsed !== 'object' || parsed === null) return { error: 'expected a JSON object' }
+  let record = parsed as Record<string, unknown>
+  let nameFromWrapper: string | undefined
+  const wrapped = record.mcpServers ?? record.mcp_servers ?? record.servers
+  if (typeof wrapped === 'object' && wrapped !== null && !Array.isArray(wrapped)) {
+    const first = Object.entries(wrapped as Record<string, unknown>)[0]
+    if (first === undefined) return { error: 'mcpServers object is empty' }
+    nameFromWrapper = first[0]
+    if (typeof first[1] !== 'object' || first[1] === null) return { error: 'server entry is not an object' }
+    record = first[1] as Record<string, unknown>
+  }
+  const stringMap = (value: unknown): Record<string, string> | undefined => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
+    const out: Record<string, string> = {}
+    for (const [key, entry] of Object.entries(value)) {
+      if (typeof entry === 'string') out[key] = entry
+    }
+    return Object.keys(out).length > 0 ? out : undefined
+  }
+  const args = Array.isArray(record.args) && record.args.every(entry => typeof entry === 'string')
+    ? record.args as string[]
+    : undefined
+  const command = typeof record.command === 'string' ? record.command : undefined
+  const url = typeof record.url === 'string' ? record.url : undefined
+  const declared = typeof record.type === 'string' ? record.type : typeof record.transport === 'string' ? record.transport : undefined
+  const httpDeclared = declared === 'http' || declared === 'streamable-http' || declared === 'sse'
+  const transport: 'stdio' | 'streamable-http' = command !== undefined && !httpDeclared
+    ? 'stdio'
+    : url !== undefined ? 'streamable-http' : httpDeclared ? 'streamable-http' : 'stdio'
+  if (transport === 'stdio' && command === undefined) return { error: 'stdio config needs a "command" field' }
+  if (transport === 'streamable-http' && url === undefined) return { error: 'http config needs a "url" field' }
+  const serverName = nameFromWrapper
+    ?? (typeof record.serverName === 'string' ? record.serverName : undefined)
+    ?? (typeof record.name === 'string' && record.name !== '@deepseek-ai/dsh-mcp-client' ? record.name : undefined)
+  const env = stringMap(record.env)
+  const headers = stringMap(record.headers)
+  return {
+    ...(serverName !== undefined ? { serverName } : {}),
+    transport,
+    ...(command !== undefined ? { command } : {}),
+    ...(args !== undefined ? { args } : {}),
+    ...(env !== undefined ? { env } : {}),
+    ...(url !== undefined ? { url } : {}),
+    ...(headers !== undefined ? { headers } : {}),
+  }
+}
+
 export function McpTab(props: { t: Translate; injected: McpInjected }): ReactElement {
   const { t, injected } = props
   const [servers, setServers] = useState<McpRow[] | null>(null)
@@ -96,6 +218,8 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const [pasteJson, setPasteJson] = useState('')
+  const [pasteError, setPasteError] = useState<string | null>(null)
 
   const openImport = async (): Promise<void> => {
     setImportOpen(true)
@@ -150,11 +274,15 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
 
   const openCreate = (): void => {
     setFormError(null)
+    setPasteError(null)
+    setPasteJson('')
     setEditor({ id: '', serverName: '', transport: 'stdio', command: '', args: '', env: '', url: '', headers: '' })
   }
 
   const openEdit = (row: McpRow): void => {
     setFormError(null)
+    setPasteError(null)
+    setPasteJson('')
     setEditor({
       id: row.id,
       serverName: row.serverName,
@@ -164,6 +292,40 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
       env: mapToPairs(row.env, '='),
       url: row.url ?? '',
       headers: mapToPairs(row.headers, ':'),
+    })
+  }
+
+  /** Fill the form from pasted JSON (mcpServers wrapper, bare entry, dsh row). */
+  const doPasteFill = (): void => {
+    if (editor === null || pasteJson.trim() === '') return
+    const parsed = parseMcpJson(pasteJson)
+    if ('error' in parsed) {
+      setPasteError(parsed.error)
+      return
+    }
+    // Existing rows keep their identity (serverName + transport); a pasted
+    // config of the other transport cannot apply to them.
+    const lockIdentity = editor.id !== ''
+    if (lockIdentity && parsed.transport !== editor.transport) {
+      setPasteError(t('pasteTransportMismatch'))
+      return
+    }
+    setPasteError(null)
+    setFormError(null)
+    setEditor({
+      ...editor,
+      ...(parsed.serverName !== undefined && !lockIdentity ? { serverName: parsed.serverName } : {}),
+      ...(!lockIdentity ? { transport: parsed.transport } : {}),
+      ...(parsed.transport === 'stdio'
+        ? {
+            command: parsed.command ?? editor.command,
+            args: (parsed.args ?? []).join('\n'),
+            env: mapToPairs(parsed.env, '='),
+          }
+        : {
+            url: parsed.url ?? editor.url,
+            headers: mapToPairs(parsed.headers, ':'),
+          }),
     })
   }
 
@@ -373,6 +535,42 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
                 </label>
               </>
             )}
+            <details className="dpc-format">
+              <summary>{t('formatTitle')}</summary>
+              <div className="dpc-form">
+                <label className="dpc-label">
+                  <span>{t('formatPaste')}</span>
+                  <textarea
+                    className="dpc-textarea"
+                    data-short="true"
+                    placeholder={'{\n  "mcpServers": { "name": { "command": "npx", "args": ["…"] } } }\n'}
+                    value={pasteJson}
+                    onChange={(event) => setPasteJson(event.target.value)}
+                  />
+                </label>
+                {pasteError !== null && <p className="dpc-formError">{pasteError}</p>}
+                <div className="dpc-cardRow">
+                  <Button variant="outline" size="sm" disabled={pasteJson.trim() === ''} onClick={doPasteFill}>{t('formatFill')}</Button>
+                </div>
+                <p className="dpc-formatHint">{t('formatYamlHint')}</p>
+                <pre className="dpc-code">{mcpRowYaml({
+                  serverName: editor.serverName,
+                  transport: editor.transport,
+                  ...(editor.transport === 'stdio'
+                    ? {
+                        command: editor.command.trim(),
+                        args: editor.args.split(/\r?\n/).map(line => line.trim()).filter(line => line !== ''),
+                        env: parsePairs(editor.env, '='),
+                      }
+                    : {
+                        url: editor.url.trim(),
+                        headers: parsePairs(editor.headers, ':'),
+                      }),
+                })}</pre>
+                <p className="dpc-formatHint">{t('formatJsonHint')}</p>
+                <pre className="dpc-code">{mcpJsonExample(editor.transport)}</pre>
+              </div>
+            </details>
             {formError !== null && <p className="dpc-formError">{formError}</p>}
             <div className="dpc-cardRow">
               <span className="dpc-spacer" />

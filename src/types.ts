@@ -19,12 +19,22 @@ export interface HostSkill {
   readonly invocation: { modelInvocable: boolean; userInvocable: boolean }
   readonly source: string
   readonly provider: string
+  /** Provider-specific base (directory skills carry their folder here). */
+  readonly resourceBase?: { kind: 'directory'; path: string } | { kind: 'url'; url: string } | { kind: 'opaque'; description: string }
+}
+
+/** Loaded skill definition subset the routes consume. */
+export interface HostSkillDefinition {
+  readonly name: string
+  readonly content: string
+  readonly path?: string
+  readonly resourceBase?: HostSkill['resourceBase']
 }
 
 /** The skills service subset this plugin consumes (structural). */
 export interface SkillsService {
   list(options?: { cwd?: string }): Promise<HostSkill[]>
-  get(name: string, options?: { cwd?: string }): Promise<{ name: string; content: string }>
+  get(name: string, options?: { cwd?: string }): Promise<HostSkillDefinition | undefined>
 }
 
 /** Host context carrying both services this plugin injects. */

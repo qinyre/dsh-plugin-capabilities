@@ -5,7 +5,7 @@
  * land in the catalog without any restart.
  */
 
-import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -78,4 +78,25 @@ export function deleteSkill(name: string, dshHome?: string): boolean {
   // skills root; the regex already pins it to one safe path segment.
   rmSync(dir, { recursive: true, force: true })
   return true
+}
+
+/**
+ * Flip one skill file's load policy by editing only the two invocation keys
+ * in its frontmatter — `disable-model-invocation: true` plus
+ * `user-invocable: false` together take the skill out of both the model and
+ * the human catalogs on every standard-provider surface; enabling removes
+ * both keys (defaults permit both surfaces). Works on any file-backed skill
+ * (user, project, agent, bundled, custom); the rest of the file, including
+ * custom keys, ordering, and body, survives byte-for-byte.
+ */
+export function setSkillPolicy(file: string, enabled: boolean): void {
+  const text = readFileSync(file, 'utf8')
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)
+  if (match === null) throw new Error('skill file has no frontmatter block')
+  const newline = text.includes('\r\n---') ? '\r\n' : '\n'
+  const body = text.slice(match[0].length)
+  const lines = match[1].split(/\r?\n/)
+  const kept = lines.filter(line => !/^(disable-model-invocation|user-invocable):/.test(line))
+  if (!enabled) kept.push('disable-model-invocation: true', 'user-invocable: false')
+  writeFileSync(file, `---${newline}${kept.join(newline)}${newline}---${body}`, 'utf8')
 }

@@ -3,16 +3,39 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { scanAllMcp } from './agents.ts'
 import { readJsonBody, sameOrigin, sendJson } from './http.ts'
+import { loadMarketIndex, type MarketMcpServer } from './market.ts'
+import { openDirectory } from './opener.ts'
+import { addGitRepo, addLocalRepo, rootExists } from './repos.ts'
 import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest } from './restart.ts'
-import { deleteSkill, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
+import { deleteSkill, setSkillPolicy, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
+import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
 import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
-import type { CapabilitiesHost } from './types.ts'
+import type { CapabilitiesHost, HostSkill } from './types.ts'
 
 /** Only this source is writable from the Settings page (provider rank 400). */
 const EDITABLE_SOURCE = 'user-dsh'
 
+/** One catalog skill as the browser sees it (editable/dir flags added). */
+type SkillRow = HostSkill & { editable: boolean; dir?: string; policyEditable: boolean }
+
+function toSkillRow(skill: HostSkill): SkillRow {
+  const dir = skill.resourceBase?.kind === 'directory' ? skill.resourceBase.path : undefined
+  return { ...skill, editable: skill.source === EDITABLE_SOURCE, ...(dir !== undefined ? { dir } : {}), policyEditable: dir !== undefined }
+}
+
+/** One registered repository plus a liveness flag (roots can go stale). */
+function toRootView(entry: SkillRootEntry): SkillRootEntry & { live: boolean } {
+  return { ...entry, live: entry.roots.every(root => rootExists(root)) }
+}
+
+export interface CapabilitiesRoutesConfig {
+  profileDirPath: string
+  /** Remount the host-plane skill provider after root-set changes. */
+  remountProvider: () => Promise<void>
+}
+
 /** Register the manager's routes; returns the disposer removing them all. */
-export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: { profileDirPath: string }): () => void {
+export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: CapabilitiesRoutesConfig): () => void {
   const disposers = [
     host.webServer.register({
       kind: 'exact',
@@ -25,9 +48,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: { profil
         }
         try {
           const skills = await host.skills.list()
-          sendJson(response, 200, {
-            skills: skills.map(skill => ({ ...skill, editable: skill.source === EDITABLE_SOURCE })),
-          })
+          sendJson(response, 200, { skills: skills.map(toSkillRow) })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -47,6 +68,10 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: { profil
         const name = url.searchParams.get('name') ?? ''
         try {
           const definition = await host.skills.get(name)
+          if (definition === undefined) {
+            sendJson(response, 404, { error: 'skill not found' })
+            return
+          }
           sendJson(response, 200, { name: definition.name, content: definition.content })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
@@ -108,6 +133,311 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: { profil
           const name = typeof body.name === 'string' ? body.name : ''
           const removed = deleteSkill(name)
           sendJson(response, removed ? 200 : 404, removed ? { ok: true, name } : { error: 'skill not found' })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/skill/policy',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { name?: unknown; enabled?: unknown }
+          if (typeof body.name !== 'string' || typeof body.enabled !== 'boolean') {
+            sendJson(response, 400, { error: 'name and enabled are required' })
+            return
+          }
+          const definition = await host.skills.get(body.name)
+          if (definition === undefined) {
+            sendJson(response, 404, { error: 'skill not found' })
+            return
+          }
+          if (definition.path === undefined) {
+            sendJson(response, 422, { error: 'skill has no file on disk (runtime-registered)' })
+            return
+          }
+          setSkillPolicy(definition.path, body.enabled)
+          sendJson(response, 200, { ok: true })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/open',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { target?: unknown; name?: unknown; id?: unknown }
+          if (typeof body.target !== 'string') {
+            sendJson(response, 400, { error: 'target is required' })
+            return
+          }
+          // Targets are resolved server-side; the browser never supplies a
+          // raw path, so this cannot be turned into an arbitrary open.
+          let dir: string | undefined
+          if (body.target === 'user-skills') {
+            dir = userSkillsDir()
+          } else if (body.target === 'plugin-state') {
+            dir = pluginStateDir()
+          } else if (body.target === 'skill') {
+            if (typeof body.name !== 'string') {
+              sendJson(response, 400, { error: 'name is required' })
+              return
+            }
+            const definition = await host.skills.get(body.name)
+            if (definition === undefined) {
+              sendJson(response, 404, { error: 'skill not found' })
+              return
+            }
+            dir = definition.path !== undefined
+              ? definition.path.replace(/[/\\]SKILL\.md$/, '').replace(/[/\\][^/\\]+\.md$/, '')
+              : definition.resourceBase?.kind === 'directory' ? definition.resourceBase.path : undefined
+          } else if (body.target === 'root') {
+            if (typeof body.id !== 'string') {
+              sendJson(response, 400, { error: 'id is required' })
+              return
+            }
+            const entry = loadState().skillRoots.find(row => row.id === body.id)
+            if (entry === undefined) {
+              sendJson(response, 404, { error: 'repository not found' })
+              return
+            }
+            dir = entry.materialDir ?? entry.path ?? entry.roots[0]
+          } else {
+            sendJson(response, 400, { error: 'unknown target' })
+            return
+          }
+          if (dir === undefined || !openDirectory(dir)) {
+            sendJson(response, 422, { error: 'directory is not available on disk' })
+            return
+          }
+          sendJson(response, 200, { ok: true })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/roots',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          response.writeHead(405, { allow: 'GET' })
+          response.end()
+          return
+        }
+        sendJson(response, 200, { roots: loadState().skillRoots.map(toRootView) })
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/roots/add',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { kind?: unknown; path?: unknown; url?: unknown }
+          if (body.kind !== 'local' && body.kind !== 'git') {
+            sendJson(response, 400, { error: 'kind must be local or git' })
+            return
+          }
+          const entry = body.kind === 'local'
+            ? typeof body.path === 'string' && body.path.trim() !== ''
+              ? await addLocalRepo(body.path)
+              : undefined
+            : typeof body.url === 'string' && body.url.trim() !== ''
+              ? await addGitRepo(body.url)
+              : undefined
+          if (entry === undefined) {
+            sendJson(response, 400, { error: body.kind === 'local' ? 'path is required' : 'url is required' })
+            return
+          }
+          await config.remountProvider()
+          sendJson(response, 200, { ok: true, root: toRootView(entry) })
+        } catch (error) {
+          sendJson(response, 400, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/roots/remove',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { id?: unknown }
+          if (typeof body.id !== 'string') {
+            sendJson(response, 400, { error: 'id is required' })
+            return
+          }
+          const ok = removeSkillRoot(body.id)
+          if (!ok) {
+            sendJson(response, 404, { error: 'repository not found' })
+            return
+          }
+          await config.remountProvider()
+          sendJson(response, 200, { ok: true })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/market/skills',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          response.writeHead(405, { allow: 'GET' })
+          response.end()
+          return
+        }
+        const index = await loadMarketIndex('skills')
+        if (index === null) {
+          sendJson(response, 502, { error: 'market index unavailable (offline?)' })
+          return
+        }
+        sendJson(response, 200, {
+          source: index.source,
+          repos: (index.skills ?? []).map(repo => ({ ...repo, installedId: findRootByUrl(repo.url)?.id ?? null })),
+        })
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/market/mcp',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          response.writeHead(405, { allow: 'GET' })
+          response.end()
+          return
+        }
+        const index = await loadMarketIndex('mcp')
+        if (index === null) {
+          sendJson(response, 502, { error: 'market index unavailable (offline?)' })
+          return
+        }
+        const existing = new Set(listMcp(config.profileDirPath).map(row => row.serverName))
+        sendJson(response, 200, {
+          source: index.source,
+          servers: (index.servers ?? []).map(server => ({ ...server, installed: existing.has(server.id) })),
+        })
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/market/skills/install',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { url?: unknown }
+          if (typeof body.url !== 'string') {
+            sendJson(response, 400, { error: 'url is required' })
+            return
+          }
+          const entry = await addGitRepo(body.url)
+          await config.remountProvider()
+          sendJson(response, 200, { ok: true, root: toRootView(entry) })
+        } catch (error) {
+          sendJson(response, 400, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/market/mcp/install',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { id?: unknown }
+          if (typeof body.id !== 'string') {
+            sendJson(response, 400, { error: 'id is required' })
+            return
+          }
+          const index = await loadMarketIndex('mcp')
+          const server = index?.servers?.find((row: MarketMcpServer) => row.id === body.id)
+          if (server === undefined) {
+            sendJson(response, 404, { error: 'server not found in the market index' })
+            return
+          }
+          if (listMcp(config.profileDirPath).some(row => row.serverName === server.id)) {
+            sendJson(response, 409, { error: 'already installed' })
+            return
+          }
+          const input: McpInput = {
+            id: '',
+            serverName: server.id,
+            transport: server.transport,
+            ...(server.transport === 'stdio'
+              ? { command: server.command, args: server.args, env: undefined }
+              : { url: server.url }),
+          }
+          const invalid = validateMcpInput(input)
+          if (invalid !== null) {
+            sendJson(response, 400, { error: invalid })
+            return
+          }
+          const id = upsertMcp(config.profileDirPath, input)
+          sendJson(response, 200, { ok: true, id, restartNeeded: true })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }

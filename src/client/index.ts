@@ -1,10 +1,11 @@
 /** dsh-plugin-capabilities client entry: contributes the top-level
- * “技能与 MCP” section into Settings (beside 通用设置/模型, with Skills and
- * MCP as internal tabs). Calls the host routes with fetch. */
+ * “技能与 MCP” section into Settings (beside 通用设置/模型, with Skills, MCP,
+ * and 市场 as internal tabs). Calls the host routes with fetch. */
 
 import { createElement as h } from 'react'
 import { CapabilitiesSection } from './CapabilitiesSection.tsx'
 import type { McpInjected, McpRow } from './McpTab.tsx'
+import type { MarketInjected, RootRowView } from './MarketTab.tsx'
 import type { SkillsInjected, SkillRowView } from './SkillsTab.tsx'
 import { zh, en } from './locales.ts'
 
@@ -63,6 +64,12 @@ export interface ImportedServerView {
   headers?: Record<string, string>
 }
 
+/** Openable targets on the host (server resolves real paths). */
+export type OpenTarget =
+  | { target: 'user-skills' }
+  | { target: 'skill'; name: string }
+  | { target: 'root'; id: string }
+
 export function apply(ctx: CapabilitiesClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-plugin-capabilities: dictionaries')
   const t = ctx.locale.bind(NS)
@@ -72,6 +79,13 @@ export function apply(ctx: CapabilitiesClientContext): void {
     get: (name: string) => fetchJson<SkillBody>(`/dsh-plugin-capabilities/skill?name=${encodeURIComponent(name)}`),
     save: (input: unknown) => post('/dsh-plugin-capabilities/skill/save', input) as Promise<{ ok: boolean }>,
     remove: (name: string) => post('/dsh-plugin-capabilities/skill/delete', { name }) as Promise<{ ok: boolean }>,
+    policy: (name: string, enabled: boolean) =>
+      post('/dsh-plugin-capabilities/skill/policy', { name, enabled }) as Promise<{ ok: boolean }>,
+    open: (target: OpenTarget) => post('/dsh-plugin-capabilities/open', target) as Promise<{ ok: boolean }>,
+    roots: () => fetchJson<{ roots: RootRowView[] }>('/dsh-plugin-capabilities/roots'),
+    addRoot: (input: { kind: 'local' | 'git'; path?: string; url?: string }) =>
+      post('/dsh-plugin-capabilities/roots/add', input) as Promise<{ ok: boolean; root: RootRowView }>,
+    removeRoot: (id: string) => post('/dsh-plugin-capabilities/roots/remove', { id }) as Promise<{ ok: boolean }>,
   }
 
   const mcpInjected: McpInjected = {
@@ -93,9 +107,19 @@ export function apply(ctx: CapabilitiesClientContext): void {
     desktop: window.dshDesktop !== undefined,
   }
 
+  const marketInjected: MarketInjected = {
+    skillsIndex: () => fetchJson<{ source: 'remote' | 'bundled'; repos: Array<MarketRepoView & { installedId: string | null }> }>('/dsh-plugin-capabilities/market/skills'),
+    mcpIndex: () => fetchJson<{ source: 'remote' | 'bundled'; servers: Array<MarketServerView & { installed: boolean }> }>('/dsh-plugin-capabilities/market/mcp'),
+    installSkillRepo: (url: string) =>
+      post('/dsh-plugin-capabilities/market/skills/install', { url }) as Promise<{ ok: boolean; root: RootRowView }>,
+    installMcp: (id: string) =>
+      post('/dsh-plugin-capabilities/market/mcp/install', { id }) as Promise<{ ok: boolean; id: string }>,
+    removeRoot: skillsInjected.removeRoot,
+  }
+
   // One top-level nav entry (between 模型 and 插件), not a tab under the
-  // Plugins section — the section component owns its internal Skills/MCP
-  // tabs directly, so nothing registers into settings.plugins.tab anymore.
+  // Plugins section — the section component owns its internal tabs directly,
+  // so nothing registers into settings.plugins.tab anymore.
   ctx.slots.inject('settings.section', () => {
     return ctx.slots.register({
       name: 'settings.section',
@@ -103,6 +127,35 @@ export function apply(ctx: CapabilitiesClientContext): void {
       order: 12,
       label: () => t('sectionNav'),
       locale: NS,
-    }, () => h(CapabilitiesSection, { t, skills: skillsInjected, mcp: mcpInjected }))
+    }, () => h(CapabilitiesSection, { t, skills: skillsInjected, mcp: mcpInjected, market: marketInjected }))
   })
+}
+
+/** One skills-market repository as the browser sees it. */
+export interface MarketRepoView {
+  id: string
+  name: string
+  nameZh?: string
+  description: string
+  descriptionZh?: string
+  url: string
+  homepage?: string
+  skillCount?: number
+}
+
+/** One MCP-market server as the browser sees it. */
+export interface MarketServerView {
+  id: string
+  name: string
+  nameZh?: string
+  description: string
+  descriptionZh?: string
+  transport: 'stdio' | 'streamable-http'
+  command?: string
+  args?: string[]
+  envKeys?: string[]
+  url?: string
+  homepage: string
+  category?: string
+  runtime?: string
 }

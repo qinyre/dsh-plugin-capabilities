@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync, mkdirSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { deleteSkill, serializeSkill, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
+import { deleteSkill, serializeSkill, setSkillPolicy, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 
 const root = mkdtempSync(join(tmpdir(), 'dsh-caps-skills-'))
 afterAll(() => rmSync(root, { recursive: true, force: true }))
@@ -69,5 +69,49 @@ describe('writeSkill / deleteSkill', () => {
     writeFileSync(join(root, 'skills', 'flat.txt'), 'stray')
     expect(deleteSkill('..', root)).toBe(false)
     expect(existsSync(join(root, 'skills', 'flat.txt'))).toBe(true)
+  })
+})
+
+describe('setSkillPolicy', () => {
+  const file = join(root, 'policy', 'SKILL.md')
+  const original = '---\nname: pol\ndescription: "A skill"\nwhenToUse: "later"\nlicense: MIT\n---\n\nBody stays.\n'
+
+  it('disables by adding both keys and keeps everything else byte-for-byte', () => {
+    mkdirSync(join(root, 'policy'), { recursive: true })
+    writeFileSync(file, original)
+    setSkillPolicy(file, false)
+    const text = readFileSync(file, 'utf8')
+    expect(text).toContain('disable-model-invocation: true')
+    expect(text).toContain('user-invocable: false')
+    expect(text).toContain('name: pol')
+    expect(text).toContain('whenToUse: "later"')
+    expect(text).toContain('license: MIT')
+    expect(text).toContain('Body stays.')
+    // Idempotent: disabling twice does not duplicate the keys.
+    setSkillPolicy(file, false)
+    expect(readFileSync(file, 'utf8').match(/disable-model-invocation/g)).toHaveLength(1)
+  })
+
+  it('re-enables by removing both keys', () => {
+    setSkillPolicy(file, true)
+    const text = readFileSync(file, 'utf8')
+    expect(text).not.toContain('disable-model-invocation')
+    expect(text).not.toContain('user-invocable')
+    expect(text).toContain('license: MIT')
+    expect(text).toContain('Body stays.')
+  })
+
+  it('preserves CRLF files and rejects frontmatter-less files', () => {
+    const crlf = join(root, 'policy-crlf', 'SKILL.md')
+    mkdirSync(join(root, 'policy-crlf'), { recursive: true })
+    writeFileSync(crlf, '---\r\nname: crlf\r\ndescription: d\r\n---\r\n\r\nbody\r\n')
+    setSkillPolicy(crlf, false)
+    const text = readFileSync(crlf, 'utf8')
+    expect(text).toContain('disable-model-invocation: true\r')
+    expect(text).toContain('user-invocable: false\r')
+
+    const bare = join(root, 'policy-bare.md')
+    writeFileSync(bare, 'no frontmatter here')
+    expect(() => setSkillPolicy(bare, false)).toThrow(/frontmatter/)
   })
 })

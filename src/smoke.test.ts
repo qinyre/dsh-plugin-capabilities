@@ -8,7 +8,7 @@
  */
 
 import { spawn, execFile } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir, homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -153,5 +153,57 @@ describe.skipIf(process.env.DSH_DESKTOP_PLUGIN_SMOKE !== '1' || !guard || !nodeO
     expect(servers.servers.some(row => row.serverName === 'smokeweb')).toBe(true)
     const patch = readFileSync(join(smokeRoot, 'profiles', 'web', 'cordis.patch.yml'), 'utf8')
     expect(patch).toContain('@deepseek-ai/dsh-mcp-client')
+
+    // 6. Local skill repository: register a folder, provider remounts, the
+    // skill enters the catalog under source "custom".
+    const repoDir = join(smokeRoot, 'my-repo')
+    mkdirSync(join(repoDir, 'repo-skill'), { recursive: true })
+    writeFileSync(join(repoDir, 'repo-skill', 'SKILL.md'), '---\nname: repo-skill\ndescription: from a local repo\n---\n\nhi')
+    const addRoot = await post('/dsh-plugin-capabilities/roots/add', { kind: 'local', path: repoDir })
+    expect(addRoot.status).toBe(200)
+    expect(readFileSync(join(smokeRoot, 'dsh-plugin-capabilities', 'state.json'), 'utf8')).toContain('my-repo') // roots recorded
+    let repoSeen = false
+    for (let tick = 0; tick < 10 && !repoSeen; tick++) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      const again = await fetch(`${base}/dsh-plugin-capabilities/skills`).then(r => r.json()) as { skills: Array<{ name: string; source: string; policyEditable: boolean }> }
+      repoSeen = again.skills.some(skill => skill.name === 'repo-skill' && skill.source === 'custom' && skill.policyEditable)
+    }
+    expect(repoSeen).toBe(true)
+
+    // 7. Policy toggle flips the invocation flags through the watched file.
+    const policyOff = await post('/dsh-plugin-capabilities/skill/policy', { name: 'repo-skill', enabled: false })
+    expect(policyOff.status).toBe(200)
+    expect(readFileSync(join(repoDir, 'repo-skill', 'SKILL.md'), 'utf8')).toContain('disable-model-invocation: true')
+    let policySeen = false
+    for (let tick = 0; tick < 10 && !policySeen; tick++) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      const again = await fetch(`${base}/dsh-plugin-capabilities/skills`).then(r => r.json()) as { skills: Array<{ name: string; invocation: { modelInvocable: boolean; userInvocable: boolean } }> }
+      const row = again.skills.find(skill => skill.name === 'repo-skill')
+      policySeen = row !== undefined && !row.invocation.modelInvocable && !row.invocation.userInvocable
+    }
+    expect(policySeen).toBe(true)
+    const policyRestore = await post('/dsh-plugin-capabilities/skill/policy', { name: 'repo-skill', enabled: true })
+    expect(policyRestore.status).toBe(200)
+
+    // 8. Market: MCP index serves (remote or bundled fallback) and one-click
+    // install writes a profile row.
+    const marketIndex = await fetch(`${base}/dsh-plugin-capabilities/market/mcp`)
+    expect(marketIndex.status).toBe(200)
+    const marketBody = await marketIndex.json() as { servers: Array<{ id: string; installed: boolean }> }
+    const memory = marketBody.servers.find(server => server.id === 'memory')
+    expect(memory).toBeDefined()
+    if (memory !== undefined && !memory.installed) {
+      const install = await post('/dsh-plugin-capabilities/market/mcp/install', { id: 'memory' })
+      expect(install.status).toBe(200)
+      const after = await fetch(`${base}/dsh-plugin-capabilities/mcp`).then(r => r.json()) as { servers: Array<{ serverName: string }> }
+      expect(after.servers.some(row => row.serverName === 'memory')).toBe(true)
+    }
+
+    // 9. Open-folder route resolves server-side and answers ok (no GUI
+    // assertion beyond the route not failing headless).
+    const open = await post('/dsh-plugin-capabilities/open', { target: 'user-skills' })
+    expect([200, 422]).toContain(open.status)
+    const openBad = await post('/dsh-plugin-capabilities/open', { target: 'root', id: 'does-not-exist' })
+    expect(openBad.status).toBe(404)
   })
 })
