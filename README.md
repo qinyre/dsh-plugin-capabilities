@@ -39,7 +39,7 @@ MCP 行的变更需要重启 dsh 才会进入组合。MCP 页头部有常驻的�
 
 ![「MCP 市场」](docs/images/screenshot-market-mcp.png)
 
-「市场」页分两栏：「技能市场」是精选的技能仓库（Anthropic 官方技能集、Superpowers 工作流集等），点「安装」走的就是上文 GitHub 仓库的下载解包流程，装完立即出现在「技能」页；「MCP 市场」是一份精选服务器列表（官方 filesystem/memory/git 等，加上 context7 这类常用第三方），点「添加」直接写入一条 profile 服务器行，和手工添加完全等价。列表数据来自[本插件仓库](https://github.com/qinyre/dsh-plugin-capabilities)的在线索引（`market/*.json`），离线时自动回退到包内快照；需要 API 密钥的服务器会在卡片上标出环境变量名，装好后到 MCP 列表里补填即可。已安装的条目可以直接卸载：技能仓库走仓库移除，MCP 行走服务器删除。
+「市场」页分两栏：「技能市场」是精选的技能仓库（Anthropic 官方技能集、Superpowers 工作流集等），点「安装」走的就是上文 GitHub 仓库的下载解包流程，装完立即出现在「技能」页；「MCP 市场」是一份精选服务器列表（官方 filesystem/memory/git 等，加上 context7 这类常用第三方），点「添加」直接写入一条 profile 服务器行，和手工添加完全等价。0.3.0 起点开条目可以看详情：技能仓库列出里面具体有哪些技能，MCP 服务器列出启动命令、需要的环境变量和提供的工具，不必再去 GitHub 主页。列表数据来自[本插件仓库](https://github.com/qinyre/dsh-plugin-capabilities)的在线索引（`market/*.json`），离线时自动回退到包内快照；需要 API 密钥的服务器会在卡片上标出环境变量名，装好后到 MCP 列表里补填即可。已安装的条目可以直接卸载：技能仓库走仓库移除，MCP 行走服务器删除。
 
 ## 安装
 

@@ -141,6 +141,7 @@ export interface MarketRepoView {
   url: string
   homepage?: string
   skillCount?: number
+  skills?: string[]
 }
 
 /** One MCP-market server as the browser sees it. */
@@ -158,4 +159,5 @@ export interface MarketServerView {
   homepage: string
   category?: string
   runtime?: string
+  tools?: string[]
 }

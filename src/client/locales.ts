@@ -125,6 +125,10 @@ export const zh = {
   marketRepoInstalled: '仓库已安装，技能稍候出现在「技能」页列表。',
   marketUninstallConfirm: '确认移除？',
   marketUninstallRootWarn: '将取消扫描该仓库并删除下载的副本（移除后可重新安装）。',
+  marketDetail: '详情',
+  marketSkillListLabel: '技能清单',
+  marketToolsLabel: '提供工具',
+  marketCommandLabel: '启动命令',
 }
 
 export const en = {
@@ -252,4 +256,8 @@ export const en = {
   marketRepoInstalled: 'Repository installed — its skills appear on the Skills tab shortly.',
   marketUninstallConfirm: 'Uninstall?',
   marketUninstallRootWarn: 'Stops scanning the repository and deletes the downloaded copy (you can reinstall later).',
+  marketDetail: 'Details',
+  marketSkillListLabel: 'Skills included',
+  marketToolsLabel: 'Tools provided',
+  marketCommandLabel: 'Launch command',
 }

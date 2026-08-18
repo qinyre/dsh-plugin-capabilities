@@ -48,6 +48,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
   const [busyId, setBusyId] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null)
   const [confirmUninstall, setConfirmUninstall] = useState<{ kind: 'root' | 'mcp'; id: string; name: string } | null>(null)
+  const [detail, setDetail] = useState<{ kind: Segment; id: string } | null>(null)
   const [reload, setReload] = useState(0)
 
   const refreshSkills = useCallback((): void => {
@@ -129,6 +130,13 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
   const title = (entry: { name: string; nameZh?: string }): string => pick(entry.name, entry.nameZh)
   const desc = (entry: { description: string; descriptionZh?: string }): string => pick(entry.description, entry.descriptionZh)
 
+  const cardStop = (event: { stopPropagation(): void }): void => { event.stopPropagation() }
+
+  // The card list refreshes on install/uninstall, so the detail modal resolves
+  // its entry by id each render and follows the fresh installed state.
+  const detailRepo = detail !== null && detail.kind === 'skills' && repos !== null ? repos.find(repo => repo.id === detail.id) ?? null : null
+  const detailServer = detail !== null && detail.kind === 'mcp' && servers !== null ? servers.find(server => server.id === detail.id) ?? null : null
+
   return (
     <div className="dpc-section">
       <style>{CSS}</style>
@@ -172,7 +180,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
           {repos !== null && repos.length > 0 && (
             <ul className="dpc-cards">
               {repos.map((repo) => (
-                <li className="dpc-card" key={repo.id}>
+                <li className="dpc-card" key={repo.id} onClick={() => setDetail({ kind: 'skills', id: repo.id })}>
                   <div className="dpc-cardTop">
                     <strong className="dpc-cardTitle" title={repo.url}>{title(repo)}</strong>
                     {repo.skillCount !== undefined && <span className="dpc-tag">{t('marketSkillCount').replace('{n}', String(repo.skillCount))}</span>}
@@ -180,14 +188,15 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
                   </div>
                   <p className="dpc-cardDesc">{desc(repo)}</p>
                   <div className="dpc-cardRow">
-                    <a className="dpc-link" href={repo.homepage ?? repo.url} target="_blank" rel="noreferrer">{t('marketHome')}</a>
+                    <button type="button" className="dpc-link" onClick={() => setDetail({ kind: 'skills', id: repo.id })}>{t('marketDetail')}</button>
+                    <a className="dpc-link" href={repo.homepage ?? repo.url} target="_blank" rel="noreferrer" onClick={cardStop}>{t('marketHome')}</a>
                     <span className="dpc-spacer" />
                     {repo.installedId !== null ? (
-                      <Button variant="ghost" size="sm" disabled={busyId !== null} onClick={() => setConfirmUninstall({ kind: 'root', id: repo.installedId as string, name: title(repo) })}>
+                      <Button variant="ghost" size="sm" disabled={busyId !== null} onClick={(event) => { event.stopPropagation(); setConfirmUninstall({ kind: 'root', id: repo.installedId as string, name: title(repo) }) }}>
                         {t('marketUninstall')}
                       </Button>
                     ) : (
-                      <Button variant="primary" size="sm" disabled={busyId !== null} onClick={() => void doInstallRepo(repo)}>
+                      <Button variant="primary" size="sm" disabled={busyId !== null} onClick={(event) => { event.stopPropagation(); void doInstallRepo(repo) }}>
                         {busyId === repo.id ? t('marketInstalling') : t('marketInstall')}
                       </Button>
                     )}
@@ -207,7 +216,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
           {servers !== null && servers.length > 0 && (
             <ul className="dpc-cards">
               {servers.map((server) => (
-                <li className="dpc-card" key={server.id}>
+                <li className="dpc-card" key={server.id} onClick={() => setDetail({ kind: 'mcp', id: server.id })}>
                   <div className="dpc-cardTop">
                     <strong className="dpc-cardTitle" title={server.id}>{title(server)}</strong>
                     <span className="dpc-tag">{server.transport}</span>
@@ -219,20 +228,21 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
                     <p className="dpc-envHint">{t('marketNeedsEnv')}: {server.envKeys.join(', ')}</p>
                   )}
                   <div className="dpc-cardRow">
-                    <a className="dpc-link" href={server.homepage} target="_blank" rel="noreferrer">{t('marketHome')}</a>
+                    <button type="button" className="dpc-link" onClick={() => setDetail({ kind: 'mcp', id: server.id })}>{t('marketDetail')}</button>
+                    <a className="dpc-link" href={server.homepage} target="_blank" rel="noreferrer" onClick={cardStop}>{t('marketHome')}</a>
                     <span className="dpc-spacer" />
                     {server.installed ? (
-                      <Button variant="ghost" size="sm" disabled={busyId !== null} onClick={() => void mcp.list().then(
+                      <Button variant="ghost" size="sm" disabled={busyId !== null} onClick={(event) => { event.stopPropagation(); void mcp.list().then(
                         (body) => {
                           const row = body.servers.find(item => item.serverName === server.id)
                           if (row !== undefined) setConfirmUninstall({ kind: 'mcp', id: row.id, name: server.id })
                         },
                         (error: Error) => setOutcome({ ok: false, text: `${t('failed')}: ${String(error.message ?? error)}` }),
-                      )}>
+                      ) }}>
                         {t('marketUninstall')}
                       </Button>
                     ) : (
-                      <Button variant="primary" size="sm" disabled={busyId !== null} onClick={() => void doInstallMcp(server)}>
+                      <Button variant="primary" size="sm" disabled={busyId !== null} onClick={(event) => { event.stopPropagation(); void doInstallMcp(server) }}>
                         {busyId === server.id ? t('marketInstalling') : t('marketAdd')}
                       </Button>
                     )}
@@ -243,6 +253,94 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
           )}
         </>
       )}
+
+      <Modal
+        open={detailRepo !== null || detailServer !== null}
+        onClose={() => setDetail(null)}
+        title={detailRepo !== null ? title(detailRepo) : detailServer !== null ? title(detailServer) : ''}
+        footer={
+          <>
+            {detailRepo !== null && (
+              <a className="dpc-link" href={detailRepo.homepage ?? detailRepo.url} target="_blank" rel="noreferrer">{t('marketHome')}</a>
+            )}
+            {detailServer !== null && (
+              <a className="dpc-link" href={detailServer.homepage} target="_blank" rel="noreferrer">{t('marketHome')}</a>
+            )}
+            <span className="dpc-spacer" />
+            {detailRepo !== null && (detailRepo.installedId !== null ? (
+              <Button variant="ghost" disabled={busyId !== null} onClick={() => { setConfirmUninstall({ kind: 'root', id: detailRepo.installedId as string, name: title(detailRepo) }); setDetail(null) }}>
+                {t('marketUninstall')}
+              </Button>
+            ) : (
+              <Button variant="primary" disabled={busyId !== null} onClick={() => void doInstallRepo(detailRepo)}>
+                {busyId === detailRepo.id ? t('marketInstalling') : t('marketInstall')}
+              </Button>
+            ))}
+            {detailServer !== null && (detailServer.installed ? (
+              <Button variant="ghost" disabled={busyId !== null} onClick={() => void mcp.list().then(
+                (body) => {
+                  const row = body.servers.find(item => item.serverName === detailServer.id)
+                  if (row !== undefined) { setConfirmUninstall({ kind: 'mcp', id: row.id, name: title(detailServer) }); setDetail(null) }
+                },
+                (error: Error) => setOutcome({ ok: false, text: `${t('failed')}: ${String(error.message ?? error)}` }),
+              )}>
+                {t('marketUninstall')}
+              </Button>
+            ) : (
+              <Button variant="primary" disabled={busyId !== null} onClick={() => void doInstallMcp(detailServer)}>
+                {busyId === detailServer.id ? t('marketInstalling') : t('marketAdd')}
+              </Button>
+            ))}
+          </>
+        }
+      >
+        {detailRepo !== null && (
+          <>
+            <p className="dpc-detailDesc">{desc(detailRepo)}</p>
+            {detailRepo.skills !== undefined && detailRepo.skills.length > 0 && (
+              <div className="dpc-detailSection">
+                <div className="dpc-detailLabel">{t('marketSkillListLabel')}</div>
+                <div className="dpc-detailTags">
+                  {detailRepo.skills.map(name => <span className="dpc-tag" key={name}>{name}</span>)}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {detailServer !== null && (
+          <>
+            <p className="dpc-detailDesc">{desc(detailServer)}</p>
+            {detailServer.command !== undefined && (
+              <div className="dpc-detailSection">
+                <div className="dpc-detailLabel">{t('marketCommandLabel')}</div>
+                <code className="dpc-code">{[detailServer.command, ...(detailServer.args ?? [])].join(' ')}</code>
+              </div>
+            )}
+            {detailServer.transport === 'streamable-http' && detailServer.url !== undefined && (
+              <div className="dpc-detailSection">
+                <div className="dpc-detailLabel">{t('marketCommandLabel')}</div>
+                <code className="dpc-code">{detailServer.url}</code>
+              </div>
+            )}
+            {detailServer.envKeys !== undefined && detailServer.envKeys.length > 0 && (
+              <div className="dpc-detailSection">
+                <div className="dpc-detailLabel">{t('marketNeedsEnv')}</div>
+                <div className="dpc-detailTags">
+                  {detailServer.envKeys.map(key => <span className="dpc-tag" key={key}>{key}</span>)}
+                </div>
+              </div>
+            )}
+            {detailServer.tools !== undefined && detailServer.tools.length > 0 && (
+              <div className="dpc-detailSection">
+                <div className="dpc-detailLabel">{t('marketToolsLabel')}</div>
+                <div className="dpc-detailTags">
+                  {detailServer.tools.map(name => <span className="dpc-tag" key={name}>{name}</span>)}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
 
       <Modal
         open={confirmUninstall !== null}

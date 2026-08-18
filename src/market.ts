@@ -23,6 +23,8 @@ export interface MarketSkillRepo {
   url: string
   homepage?: string
   skillCount?: number
+  /** Skill names inside the repository, for the market detail view. */
+  skills?: string[]
 }
 
 /** One installable server in the MCP index. */
@@ -41,6 +43,8 @@ export interface MarketMcpServer {
   category?: string
   /** Runtime hint shown next to stdio commands (npx / uvx). */
   runtime?: string
+  /** Tool names the server exposes, for the market detail view. */
+  tools?: string[]
 }
 
 export interface MarketIndex {
@@ -80,6 +84,7 @@ function parseSkillsIndex(parsed: unknown): MarketSkillRepo[] | null {
       url: record.url,
       ...isString(record.homepage) ? { homepage: record.homepage } : {},
       ...(typeof record.skillCount === 'number' ? { skillCount: record.skillCount } : {}),
+      ...isStringArray(record.skills) ? { skills: record.skills } : {},
     })
   }
   return out.length > 0 ? out : null
@@ -111,6 +116,7 @@ function parseMcpIndex(parsed: unknown): MarketMcpServer[] | null {
       homepage: record.homepage,
       ...isString(record.category) ? { category: record.category } : {},
       ...isString(record.runtime) ? { runtime: record.runtime } : {},
+      ...isStringArray(record.tools) ? { tools: record.tools } : {},
     })
   }
   return out.length > 0 ? out : null

@@ -10,7 +10,8 @@
       "descriptionZh": "Anthropic 官方技能仓库：文档技能（docx/pdf/pptx/xlsx）、artifacts-builder、canvas-design、mcp-builder 等。",
       "url": "https://github.com/anthropics/skills",
       "homepage": "https://github.com/anthropics/skills",
-      "skillCount": 13
+      "skillCount": 19,
+      "skills": ["algorithmic-art", "brand-guidelines", "canvas-design", "claude-academy-guide", "claude-api", "discernment-nudge", "doc-coauthoring", "docx", "frontend-design", "internal-comms", "mcp-builder", "pdf", "pptx", "skill-creator", "slack-gif-creator", "theme-factory", "web-artifacts-builder", "webapp-testing", "xlsx"]
     },
     {
       "id": "obra-superpowers",
@@ -20,7 +21,8 @@
       "descriptionZh": "Jesse Vincent 维护的工作流技能集：头脑风暴、系统化调试、测试驱动开发、撰写计划及配套的调度/评审流程。",
       "url": "https://github.com/obra/superpowers",
       "homepage": "https://github.com/obra/superpowers",
-      "skillCount": 18
+      "skillCount": 14,
+      "skills": ["brainstorming", "dispatching-parallel-agents", "executing-plans", "finishing-a-development-branch", "receiving-code-review", "requesting-code-review", "subagent-driven-development", "systematic-debugging", "test-driven-development", "using-git-worktrees", "using-superpowers", "verification-before-completion", "writing-plans", "writing-skills"]
     },
     {
       "id": "vercel-labs-skills",
@@ -30,7 +32,8 @@
       "descriptionZh": "Vercel Labs 的实用小技能集，包含 find-skills（发现并安装社区技能）。",
       "url": "https://github.com/vercel-labs/skills",
       "homepage": "https://github.com/vercel-labs/skills",
-      "skillCount": 4
+      "skillCount": 1,
+      "skills": ["find-skills"]
     }
   ]
 }

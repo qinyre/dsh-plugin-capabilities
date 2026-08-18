@@ -8,10 +8,11 @@ const okJson = (body: unknown): typeof fetch =>
 describe('loadMarketIndex', () => {
   it('prefers a valid remote index', async () => {
     const index = await loadMarketIndex('skills', {
-      fetcher: okJson({ repos: [{ id: 'r1', name: 'Repo', description: 'd', url: 'https://github.com/a/b' }] }),
+      fetcher: okJson({ repos: [{ id: 'r1', name: 'Repo', description: 'd', url: 'https://github.com/a/b', skills: ['s1', 's2'] }] }),
     })
     expect(index?.source).toBe('remote')
     expect(index?.skills?.[0]?.id).toBe('r1')
+    expect(index?.skills?.[0]?.skills).toEqual(['s1', 's2'])
   })
 
   it('falls back to the bundled snapshot when remote is unreachable or invalid', async () => {
@@ -29,7 +30,7 @@ describe('loadMarketIndex', () => {
     const index = await loadMarketIndex('mcp', {
       fetcher: okJson({
         servers: [
-          { id: 'ok', name: 'OK', description: 'd', transport: 'stdio', command: 'npx', args: ['-y', 'x'], envKeys: ['K'], homepage: 'https://x' },
+          { id: 'ok', name: 'OK', description: 'd', transport: 'stdio', command: 'npx', args: ['-y', 'x'], envKeys: ['K'], homepage: 'https://x', tools: ['t1'] },
           { id: 'no-command', name: 'Bad', description: 'd', transport: 'stdio', homepage: 'https://x' },
           { id: 'no-home', name: 'Bad2', description: 'd', transport: 'stdio', command: 'npx' },
           'not an object',
@@ -38,7 +39,7 @@ describe('loadMarketIndex', () => {
     })
     expect(index?.source).toBe('remote')
     expect(index?.servers).toHaveLength(1)
-    expect(index?.servers?.[0]).toMatchObject({ id: 'ok', envKeys: ['K'] })
+    expect(index?.servers?.[0]).toMatchObject({ id: 'ok', envKeys: ['K'], tools: ['t1'] })
   })
 
   it('ships parseable bundled snapshots with expected top-level shape', () => {
@@ -53,5 +54,13 @@ describe('loadMarketIndex', () => {
   it('marks nothing installed and returns null entries-safe data offline for mcp too', async () => {
     const index = await loadMarketIndex('mcp', { fetcher: okJson({ servers: [{ id: 'http1', name: 'H', description: 'd', transport: 'streamable-http', url: 'https://e/mcp', homepage: 'https://x' }] }) })
     expect(index?.servers?.[0]).toMatchObject({ transport: 'streamable-http', url: 'https://e/mcp' })
+  })
+
+  it('bundles skill and tool inventories for the market detail view', async () => {
+    const failing = (async () => { throw new Error('offline') }) as unknown as typeof fetch
+    const skills = await loadMarketIndex('skills', { fetcher: failing })
+    expect(skills?.skills?.some(repo => (repo.skills?.length ?? 0) > 0)).toBe(true)
+    const mcp = await loadMarketIndex('mcp', { fetcher: failing })
+    expect(mcp?.servers?.some(server => (server.tools?.length ?? 0) > 0)).toBe(true)
   })
 })

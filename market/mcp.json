@@ -13,7 +13,8 @@
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
       "category": "files",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["read_file", "read_multiple_files", "write_file", "edit_file", "create_directory", "list_directory", "directory_tree", "move_file", "search_files", "get_file_info", "list_allowed_directories"]
     },
     {
       "id": "memory",
@@ -26,7 +27,8 @@
       "args": ["-y", "@modelcontextprotocol/server-memory"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
       "category": "knowledge",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["create_entities", "create_relations", "add_observations", "delete_entities", "delete_observations", "delete_relations", "read_graph", "search_nodes", "open_nodes"]
     },
     {
       "id": "sequentialthinking",
@@ -39,7 +41,8 @@
       "args": ["-y", "@modelcontextprotocol/server-sequentialthinking"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
       "category": "reasoning",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["sequentialthinking"]
     },
     {
       "id": "everything",
@@ -52,7 +55,8 @@
       "args": ["-y", "@modelcontextprotocol/server-everything"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
       "category": "test",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["echo", "add", "sampleLLM", "longRunningOperation", "getTinyImage", "annotatedMessage"]
     },
     {
       "id": "git",
@@ -65,7 +69,8 @@
       "args": ["mcp-server-git"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
       "category": "dev",
-      "runtime": "uvx (Python/uv)"
+      "runtime": "uvx (Python/uv)",
+      "tools": ["git_status", "git_diff_unstaged", "git_diff_staged", "git_diff", "git_add", "git_commit", "git_reset", "git_log", "git_create_branch", "git_checkout_branch", "git_list_branches", "git_create_tag", "git_delete_tag", "git_list_tags", "git_push", "git_pull"]
     },
     {
       "id": "fetch",
@@ -78,7 +83,8 @@
       "args": ["mcp-server-fetch"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
       "category": "web",
-      "runtime": "uvx (Python/uv)"
+      "runtime": "uvx (Python/uv)",
+      "tools": ["fetch"]
     },
     {
       "id": "sqlite",
@@ -91,7 +97,8 @@
       "args": ["mcp-server-sqlite", "--db-path", "sqlite.db"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite",
       "category": "data",
-      "runtime": "uvx (Python/uv)"
+      "runtime": "uvx (Python/uv)",
+      "tools": ["read_query", "write_query", "create_table", "list_tables", "describe_table", "append_insight"]
     },
     {
       "id": "time",
@@ -104,7 +111,8 @@
       "args": ["mcp-server-time"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/time",
       "category": "knowledge",
-      "runtime": "uvx (Python/uv)"
+      "runtime": "uvx (Python/uv)",
+      "tools": ["get_current_time", "convert_time"]
     },
     {
       "id": "github",
@@ -118,7 +126,8 @@
       "envKeys": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/github",
       "category": "dev",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["create_or_update_file", "create_branch", "create_issue", "add_issue_comment", "create_pull_request", "create_pull_request_review", "fork_repository", "push_files", "get_file_contents", "get_issue", "get_pull_request", "get_pull_request_files", "get_pull_request_status", "get_pull_request_comments", "list_commits", "list_issues", "list_pull_requests", "list_branches", "merge_pull_request", "search_code", "search_issues", "search_repositories", "search_users", "update_issue", "update_pull_request_branch"]
     },
     {
       "id": "brave-search",
@@ -132,7 +141,8 @@
       "envKeys": ["BRAVE_API_KEY"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/brave-search",
       "category": "web",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["brave_web_search", "brave_local_search"]
     },
     {
       "id": "puppeteer",
@@ -145,7 +155,8 @@
       "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer",
       "category": "web",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["puppeteer_navigate", "puppeteer_screenshot", "puppeteer_click", "puppeteer_fill", "puppeteer_evaluate", "puppeteer_select"]
     },
     {
       "id": "context7",
@@ -158,7 +169,8 @@
       "args": ["-y", "@upstash/context7-mcp"],
       "homepage": "https://github.com/upstash/context7",
       "category": "knowledge",
-      "runtime": "npx (Node.js)"
+      "runtime": "npx (Node.js)",
+      "tools": ["resolve-library-id", "get-library-docs"]
     }
   ]
 }

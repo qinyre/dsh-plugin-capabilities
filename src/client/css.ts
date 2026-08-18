@@ -26,7 +26,7 @@ export const CSS = `
 .dpc-refresh:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}
 .dpc-empty{margin:0;font-size:13px;line-height:20px;color:var(--dsw-alias-label-tertiary)}
 .dpc-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:10px;margin:0;padding:0;list-style:none}
-.dpc-card{display:flex;flex-direction:column;gap:8px;min-width:0;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-3);padding:12px 14px}
+.dpc-card{display:flex;flex-direction:column;gap:8px;min-width:0;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-3);padding:12px 14px;cursor:pointer}
 .dpc-card:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dpc-cardTop{display:flex;align-items:center;gap:8px}
 .dpc-cardTitle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px;font-weight:600;font-family:var(--ds-font-family-code)}
@@ -108,5 +108,10 @@ export const CSS = `
 .dpc-format .dpc-form{margin-top:8px}
 .dpc-formatHint{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary)}
 .dpc-code{margin:4px 0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:8px 10px;overflow-x:auto;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-code);font-size:11px;line-height:17px;white-space:pre}
+/* Market detail modal. */
+.dpc-detailDesc{margin:0;font-size:13px;line-height:20px}
+.dpc-detailSection{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.dpc-detailLabel{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
+.dpc-detailTags{display:flex;flex-wrap:wrap;gap:4px}
 @media(max-width:680px){.dpc-cards{grid-template-columns:minmax(0,1fr)}}
 `
