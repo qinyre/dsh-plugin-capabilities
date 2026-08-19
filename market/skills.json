@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-18",
+  "updatedAt": "2026-08-19",
   "repos": [
     {
       "id": "anthropics-skills",
@@ -11,7 +11,105 @@
       "url": "https://github.com/anthropics/skills",
       "homepage": "https://github.com/anthropics/skills",
       "skillCount": 19,
-      "skills": ["algorithmic-art", "brand-guidelines", "canvas-design", "claude-academy-guide", "claude-api", "discernment-nudge", "doc-coauthoring", "docx", "frontend-design", "internal-comms", "mcp-builder", "pdf", "pptx", "skill-creator", "slack-gif-creator", "theme-factory", "web-artifacts-builder", "webapp-testing", "xlsx"]
+      "skills": [
+        {
+          "name": "academy-guide",
+          "description": "Stop and check this skill before finishing any reply to a question about how to use Claude or a Claude product — it recommends matching courses, tutorials, and use cases from Claude Academy (academy.claude.com), Anthropic's learning hub. Trigger on: \"how do I\"",
+          "descriptionZh": "回答 Claude 产品使用问题前先查这份指南，给权威、最新的答案。"
+        },
+        {
+          "name": "algorithmic-art",
+          "description": "Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use this when users request creating art using code, generative art, algorithmic art, flow fields, or particle systems. Create original algorithmic art rather th",
+          "descriptionZh": "用 p5.js 创作算法艺术，支持种子随机与交互式参数探索；想「用代码画艺术」时用。"
+        },
+        {
+          "name": "brand-guidelines",
+          "description": "Applies Anthropic's official brand colors and typography to any sort of artifact that may benefit from having Anthropic's look-and-feel. Use it when brand colors or style guidelines, visual formatting, or company design standards apply.",
+          "descriptionZh": "把 Anthropic 官方配色与字体应用到各类产出物，需要 Anthropic 观感时使用。"
+        },
+        {
+          "name": "canvas-design",
+          "description": "Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, design, or other static piece. Create original visual designs, never copying existing artists' work t",
+          "descriptionZh": "以设计方法论创作 PNG/PDF 视觉作品：海报、封面、艺术图。"
+        },
+        {
+          "name": "claude-api",
+          "description": "Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration. TRIGGER — read BEFORE opening the target file; don't skip because it \"looks like a one-liner\" — whenever: the",
+          "descriptionZh": "Claude API / Anthropic SDK 参考：模型、定价、参数、流式、工具调用、MCP 与 agents。"
+        },
+        {
+          "name": "discernment-nudge",
+          "description": "After you give a substantive answer or draft that the user may act on — advice or recommendations, drafted artifacts such as goals, plans, pitches, proposals, or emails, estimates or projections, analysis or interpretation of data, factual claims they may rely",
+          "descriptionZh": "在给出用户可能据此行动的实质性回答后，提醒其自行判断与核实。"
+        },
+        {
+          "name": "doc-coauthoring",
+          "description": "Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs, or similar structured content. This workflow helps users efficiently transfer context, refine conte",
+          "descriptionZh": "结构化地与用户共创文档：提案、技术规格、决策记录等。"
+        },
+        {
+          "name": "docx",
+          "description": "Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files) or Word templates (.dotx files). Triggers include: any mention of 'Word doc', 'word document', '.docx', '.dotx', or requests to produce professional docume",
+          "descriptionZh": "创建、读取、编辑 .docx/.dotx Word 文档与模板。"
+        },
+        {
+          "name": "frontend-design",
+          "description": "Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.",
+          "descriptionZh": "构建或改造 UI 时的视觉设计指导：美学方向、排版与风格。"
+        },
+        {
+          "name": "internal-comms",
+          "description": "A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever asked to write some sort of internal communications (status reports, leadership updates, 3P updates,",
+          "descriptionZh": "用公司惯用格式写各类内部沟通文案。"
+        },
+        {
+          "name": "mcp-builder",
+          "description": "Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. Use when building MCP servers to integrate external APIs or services, whether in Python (FastMCP) or Node/Type",
+          "descriptionZh": "构建高质量 MCP 服务器：工具设计、资源暴露与服务集成。"
+        },
+        {
+          "name": "pdf",
+          "description": "Use this skill whenever the user wants to do anything with PDF files. This includes reading or extracting text/tables from PDFs, combining or merging multiple PDFs into one, splitting PDFs apart, rotating pages, adding watermarks, creating new PDFs, filling PD",
+          "descriptionZh": "PDF 全能处理：读取/提取文本表格、合并拆分、旋转加水印、填表、加解密、OCR。"
+        },
+        {
+          "name": "pptx",
+          "description": "Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx or .potx file (even if the extracted conte",
+          "descriptionZh": "创建与编辑 .pptx/.potx 演示文稿：汇报、路演、课件。"
+        },
+        {
+          "name": "skill-creator",
+          "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or opt",
+          "descriptionZh": "创建、修改、度量技能的官方参考工作流。"
+        },
+        {
+          "name": "slack-gif-creator",
+          "description": "Knowledge and utilities for creating animated GIFs optimized for Slack. Provides constraints, validation tools, and animation concepts. Use when users request animated GIFs for Slack like \"make me a GIF of X doing Y for Slack.\"",
+          "descriptionZh": "创建适配 Slack 的动图 GIF，附带约束、校验与动画概念。"
+        },
+        {
+          "name": "theme-factory",
+          "description": "Toolkit for styling artifacts with a theme. These artifacts can be slides, docs, reportings, HTML landing pages, etc. There are 10 pre-set themes with colors/fonts that you can apply to any artifact that has been creating, or can generate a new theme on-the-fl",
+          "descriptionZh": "为幻灯片、文档、报告、落地页等套主题样式，内置 10 套预设。"
+        },
+        {
+          "name": "web-artifacts-builder",
+          "description": "Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui). Use for complex artifacts requiring state management, routing, or shadcn/ui components - not for simple sin",
+          "descriptionZh": "用 React/Tailwind/shadcn 等现代前端技术构建复杂多组件 HTML 应用。"
+        },
+        {
+          "name": "webapp-testing",
+          "description": "Toolkit for interacting with and testing local web applications using Playwright. Supports verifying frontend functionality, debugging UI behavior, capturing browser screenshots, and viewing browser logs.",
+          "descriptionZh": "用 Playwright 与本地 Web 应用交互和测试：验证前端功能、调试 UI、抓 bug。"
+        },
+        {
+          "name": "xlsx",
+          "description": "Use this skill any time a spreadsheet file is the primary input or output. This means any task where the user wants to: open, read, edit, or fix an existing .xlsx, .xlsm, .xltx, .csv, or .tsv file (e.g., adding columns, computing formulas, formatting, charting",
+          "descriptionZh": "电子表格为主输入/输出时的全能处理：打开、读取、编辑、修复 .xlsx。"
+        }
+      ],
+      "detail": "Anthropic's official agent-skills repository. The document quartet (docx/pdf/pptx/xlsx) reads and writes real Office files via bundled tooling; the creation trio (web-artifacts-builder, canvas-design, theme-factory) produces React/Tailwind artifacts, posters and themed reports; mcp-builder walks through shipping a well-tooled MCP server; skill-creator is the reference workflow for authoring and measuring your own skills.",
+      "detailZh": "Anthropic 官方技能仓库。文档四件套（docx/pdf/pptx/xlsx）直接读写真实 Office 文件；创作三件套（web-artifacts-builder、canvas-design、theme-factory）产出 React/Tailwind 应用、海报与带主题的报告；mcp-builder 带你做出工具设计规范的 MCP 服务器；skill-creator 是编写、改进与度量技能的参考工作流。"
     },
     {
       "id": "obra-superpowers",
@@ -22,7 +120,80 @@
       "url": "https://github.com/obra/superpowers",
       "homepage": "https://github.com/obra/superpowers",
       "skillCount": 14,
-      "skills": ["brainstorming", "dispatching-parallel-agents", "executing-plans", "finishing-a-development-branch", "receiving-code-review", "requesting-code-review", "subagent-driven-development", "systematic-debugging", "test-driven-development", "using-git-worktrees", "using-superpowers", "verification-before-completion", "writing-plans", "writing-skills"]
+      "skills": [
+        {
+          "name": "brainstorming",
+          "description": "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.",
+          "descriptionZh": "任何创造性工作（新功能、新组件、改行为）前必用的头脑风暴流程。"
+        },
+        {
+          "name": "dispatching-parallel-agents",
+          "description": "Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies",
+          "descriptionZh": "面对两个以上无共享状态、无先后依赖的独立任务时并行派发子 agent。"
+        },
+        {
+          "name": "executing-plans",
+          "description": "Use when you have a written implementation plan to execute in a separate session with review checkpoints",
+          "descriptionZh": "在独立会话中按检查点执行已写好的实施计划。"
+        },
+        {
+          "name": "finishing-a-development-branch",
+          "description": "Use when implementation is complete, all tests pass, and you need to decide how to integrate the work",
+          "descriptionZh": "实现完成、测试全绿后决定分支如何收尾合并。"
+        },
+        {
+          "name": "receiving-code-review",
+          "description": "Use when receiving code review feedback, before implementing suggestions, especially if feedback seems unclear or technically questionable - requires technical rigor and verification, not performative agreement or blind implementation",
+          "descriptionZh": "收到评审意见先核实再改：反馈不清或技术存疑时保持严谨。"
+        },
+        {
+          "name": "requesting-code-review",
+          "description": "Use when completing tasks, implementing major features, or before merging to verify work meets requirements",
+          "descriptionZh": "完成任务、实现大功能或合并前主动请求代码评审。"
+        },
+        {
+          "name": "subagent-driven-development",
+          "description": "Use when executing implementation plans with independent tasks in the current session",
+          "descriptionZh": "当前会话内用子 agent 逐项执行计划里的独立任务。"
+        },
+        {
+          "name": "systematic-debugging",
+          "description": "Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes",
+          "descriptionZh": "遇到任何 bug、测试失败或异常行为，提出修复前先走系统化定位。"
+        },
+        {
+          "name": "test-driven-development",
+          "description": "Use when implementing any feature or bugfix, before writing implementation code",
+          "descriptionZh": "实现任何功能或修 bug 前先写测试的红绿循环。"
+        },
+        {
+          "name": "using-git-worktrees",
+          "description": "Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via native tools or git worktree fallback",
+          "descriptionZh": "需要隔离环境的功能开发或执行计划前先建 git worktree。"
+        },
+        {
+          "name": "using-superpowers",
+          "description": "Use when starting any conversation - establishes how to find and use skills, requiring skill invocation before ANY response including clarifying questions",
+          "descriptionZh": "会话开始即加载：建立技能发现与触发纪律。"
+        },
+        {
+          "name": "verification-before-completion",
+          "description": "Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions always",
+          "descriptionZh": "声称完成前必须跑验证命令并确认输出。"
+        },
+        {
+          "name": "writing-plans",
+          "description": "Use when you have a spec or requirements for a multi-step task, before touching code",
+          "descriptionZh": "拿到规格或多步任务需求后、动代码前先写实施计划。"
+        },
+        {
+          "name": "writing-skills",
+          "description": "Use when creating new skills, editing existing skills, or verifying skills work before deployment",
+          "descriptionZh": "创建、编辑技能并在部署前验证其可用。"
+        }
+      ],
+      "detail": "Jesse Vincent's workflow-discipline suite, adopted across many agent harnesses. A TDD core (test-driven-development, systematic-debugging, verification-before-completion) surrounded by process skills: brainstorming before creative work, writing-plans before coding, dispatching and reviewing parallel agents, git worktrees for isolation, and requesting/receiving code review with rigor. using-superpowers installs the discipline that makes the others fire at the right moment.",
+      "detailZh": "Jesse Vincent 的工作流纪律套件，被各类 agent 广泛采用。以 TDD 为核心（测试驱动开发、系统化调试、完成前验证），外围是流程技能：创造性工作前先头脑风暴、写代码前先写计划、独立任务并行派发与评审、git worktree 隔离开发，以及严谨地发起与接收代码评审。using-superpowers 负责让其他技能在对的时机自动触发。"
     },
     {
       "id": "vercel-labs-skills",
@@ -33,7 +204,363 @@
       "url": "https://github.com/vercel-labs/skills",
       "homepage": "https://github.com/vercel-labs/skills",
       "skillCount": 1,
-      "skills": ["find-skills"]
+      "skills": [
+        {
+          "name": "find-skills",
+          "description": "Helps users discover and install agent skills when they ask questions like \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", or express interest in extending capabilities. This skill should be used when the user is looking for functionalit",
+          "descriptionZh": "用户问「怎么做 X」「有没有做 X 的技能」时搜索并安装社区技能。"
+        }
+      ],
+      "detail": "A small collection from Vercel Labs. Its centerpiece, find-skills, discovers community skills on demand: ask 'is there a skill for X' and it searches public skill indexes and installs what it finds — a good companion to this curated market.",
+      "detailZh": "Vercel Labs 的小型技能集。核心是 find-skills：按需发现社区技能——问一句「有没有做 X 的技能」，它就会搜索公开技能索引并安装结果，是本精选市场之外的很好补充。"
+    },
+    {
+      "id": "addyosmani-agent-skills",
+      "name": "Addy Osmani Engineering Skills",
+      "nameZh": "Addy Osmani 工程技能集",
+      "description": "Production-grade engineering practice skills from Addy Osmani: API design, code review, TDD, security hardening, performance, observability, CI/CD, shipping.",
+      "descriptionZh": "Addy Osmani 出品的工程实践技能：API 设计、代码评审、TDD、安全加固、性能优化、可观测性、CI/CD 与发布。",
+      "detail": "24 opinionated process skills covering the full delivery arc: spec- and source-driven development before coding, incremental implementation and task breakdown during, multi-axis code review and doubt-driven adversarial review before anything stands, plus specialized practice for APIs, frontend UI, security hardening, performance, observability and launch checklists. A senior-engineering handbook your agent loads on demand.",
+      "detailZh": "24 个态度鲜明的流程技能，覆盖完整交付链路：动手前的规格驱动与源文档驱动开发、实施中的增量交付与任务拆解、定论前的多轴代码评审与「怀疑驱动」对抗式复核，另有 API 设计、前端 UI、安全加固、性能优化、可观测性、发布检查清单等专项。相当于一本随取随用的高阶工程手册。",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "homepage": "https://github.com/addyosmani/agent-skills",
+      "skillCount": 24,
+      "skills": [
+        {
+          "name": "api-and-interface-design",
+          "description": "Guides stable API and interface design. Use when designing APIs, module boundaries, or any public interface. Use when creating REST or GraphQL endpoints, defining type contracts between modules, or establishing boundaries between frontend and backend.",
+          "descriptionZh": "设计稳定的 API、模块边界与公共接口（REST/GraphQL 等）。"
+        },
+        {
+          "name": "browser-testing-with-devtools",
+          "description": "Tests in real browsers via Chrome DevTools MCP. Use when building or debugging anything that runs in a browser. Use when you need to inspect the DOM, capture console errors, analyze network requests, profile performance, or verify visual output with real runti",
+          "descriptionZh": "经 Chrome DevTools MCP 在真实浏览器里测试与调试。"
+        },
+        {
+          "name": "ci-cd-and-automation",
+          "description": "Automates CI/CD pipeline setup. Use when setting up or modifying build and deployment pipelines. Use when you need to automate quality gates, configure test runners in CI, or establish deployment strategies.",
+          "descriptionZh": "搭建与改造 CI/CD 流水线、自动化质量门禁。"
+        },
+        {
+          "name": "code-review-and-quality",
+          "description": "Conducts multi-axis code review. Use before merging any change. Use when reviewing code written by yourself, another agent, or a human. Use when you need to assess code quality across multiple dimensions before it enters the main branch.",
+          "descriptionZh": "合并前做多轴代码评审（自己、他人或 agent 写的都行）。"
+        },
+        {
+          "name": "code-simplification",
+          "description": "Simplifies code for clarity. Use when refactoring code for clarity without changing behavior. Use when code works but is harder to read, maintain, or extend than it should be. Use when reviewing code that has accumulated unnecessary complexity.",
+          "descriptionZh": "行为不变的前提下简化代码，提升可读性与可维护性。"
+        },
+        {
+          "name": "context-engineering",
+          "description": "Optimizes agent context setup. Use when starting a new session, when agent output quality degrades, when switching between tasks, or when you need to configure rules files and context for a project.",
+          "descriptionZh": "新会话开始或输出质量下降时优化 agent 上下文配置。"
+        },
+        {
+          "name": "debugging-and-error-recovery",
+          "description": "Guides systematic root-cause debugging. Use when tests fail, builds break, behavior doesn't match expectations, or you encounter any unexpected error. Use when you need a systematic approach to finding and fixing the root cause rather than guessing.",
+          "descriptionZh": "测试失败、构建挂掉、行为异常时的系统化根因调试。"
+        },
+        {
+          "name": "deprecation-and-migration",
+          "description": "Manages deprecation and migration. Use when removing old systems, APIs, or features. Use when migrating users from one implementation to another. Use when deciding whether to maintain or sunset existing code.",
+          "descriptionZh": "下线旧系统/接口与用户迁移的完整流程。"
+        },
+        {
+          "name": "documentation-and-adrs",
+          "description": "Records decisions and documentation. Use when making architectural decisions, changing public APIs, shipping features, or when you need to record context that future engineers and agents will need to understand the codebase.",
+          "descriptionZh": "架构决策（ADR）、公共 API 变更与文档沉淀。"
+        },
+        {
+          "name": "doubt-driven-development",
+          "description": "Subjects every non-trivial decision to a fresh-context adversarial review before it stands. Use when correctness matters more than speed, when working in unfamiliar code, when stakes are high (production, security-sensitive logic, irreversible operations), or ",
+          "descriptionZh": "让每个非平凡决策先过一遍新上下文对抗式复核再放行。"
+        },
+        {
+          "name": "frontend-ui-engineering",
+          "description": "Builds production-quality, accessible, responsive user-facing UIs. Use when building or modifying interfaces and pages, creating components, implementing layouts, meeting WCAG accessibility requirements, managing state, or when the output needs to look and fee",
+          "descriptionZh": "构建生产级、可访问、响应式的前端界面与组件。"
+        },
+        {
+          "name": "git-workflow-and-versioning",
+          "description": "Structures git workflow practices. Use when making any code change. Use when committing, branching, resolving conflicts, or when you need to organize work across multiple parallel streams. Use when cutting a release, choosing a semantic version bump, tagging, ",
+          "descriptionZh": "提交、分支、冲突解决等 git 工作流规范。"
+        },
+        {
+          "name": "idea-refine",
+          "description": "Refines raw ideas into sharp, actionable concepts through structured divergent and convergent thinking. Use when an idea is still vague, when you need to stress-test assumptions before committing to a plan, or when you want to expand options before converging ",
+          "descriptionZh": "用发散-收敛结构把模糊想法打磨成可执行概念。"
+        },
+        {
+          "name": "incremental-implementation",
+          "description": "Delivers changes incrementally. Use when implementing any feature or change that touches more than one file. Use when you're about to write a large amount of code at once, or when a task feels too big to land in one step.",
+          "descriptionZh": "多文件改动按增量交付，避免一次写一大坨。"
+        },
+        {
+          "name": "interview-me",
+          "description": "Extracts what the user actually wants instead of what they think they should want. Achieves this through one-question-at-a-time interview until ~95% confidence about the underlying intent. Use when an ask is underspecified (\"build me X\" without \"for whom\" or \"",
+          "descriptionZh": "一次一问地访谈用户，挖出真实需求而非表面想法。"
+        },
+        {
+          "name": "observability-and-instrumentation",
+          "description": "Instruments code so production behavior is visible and diagnosable. Use when adding logging, metrics, tracing, or alerting. Use when shipping any feature that runs in production and you need evidence it works. Use when production issues are reported but you ca",
+          "descriptionZh": "加日志、指标、追踪与告警，让生产行为可诊断。"
+        },
+        {
+          "name": "performance-optimization",
+          "description": "Optimizes application performance across frontend, backend, queries, and databases. Use when performance requirements exist, when you suspect performance regressions, when Core Web Vitals or load times need improvement, when N+1 query patterns need fixing, or ",
+          "descriptionZh": "前端、后端、查询与数据库的性能优化。"
+        },
+        {
+          "name": "planning-and-task-breakdown",
+          "description": "Breaks work into ordered tasks. Use when you have a spec or clear requirements and need to break work into implementable tasks. Use when a task feels too large to start, when you need to estimate scope, or when parallel work is possible.",
+          "descriptionZh": "把规格与需求拆成有序可实施的任务。"
+        },
+        {
+          "name": "security-and-hardening",
+          "description": "Hardens code against vulnerabilities. Use when handling user input, authentication, data storage, or external integrations. Use when building any feature that accepts untrusted data, manages user sessions, or interacts with third-party services. Use when perso",
+          "descriptionZh": "处理用户输入、鉴权、存储与外部集成时的安全加固。"
+        },
+        {
+          "name": "shipping-and-launch",
+          "description": "Prepares production launches. Use when preparing to deploy to production. Use when you need a pre-launch checklist, when setting up monitoring, when planning a staged rollout, or when you need a rollback strategy.",
+          "descriptionZh": "上线前的检查清单、监控配置与发布准备。"
+        },
+        {
+          "name": "source-driven-development",
+          "description": "Grounds every implementation decision in official documentation. Use when you want authoritative, source-cited code free from outdated patterns. Use when building with any framework or library where correctness matters.",
+          "descriptionZh": "每个实现决策都以官方文档为依据，杜绝过时写法。"
+        },
+        {
+          "name": "spec-driven-development",
+          "description": "Creates specs before coding. Use when starting a new project, feature, or significant change and no specification exists yet. Use when requirements are unclear, ambiguous, or only exist as a vague idea. Use when a single requirement spans several independently",
+          "descriptionZh": "项目/功能开工前没有规格就先写规格。"
+        },
+        {
+          "name": "test-driven-development",
+          "description": "Drives development with tests. Use when implementing any logic, fixing any bug, or changing any behavior. Use when you need to prove that code works, when a bug report arrives, or when you're about to modify existing functionality.",
+          "descriptionZh": "用测试驱动任何逻辑实现、bug 修复与行为变更。"
+        },
+        {
+          "name": "using-agent-skills",
+          "description": "Discovers and invokes agent skills. Use when starting a session or when you need to discover which skill applies to the current task. This is the meta-skill that governs how all other skills are discovered and invoked.",
+          "descriptionZh": "元技能：会话开始或需要时发现并调用合适的技能。"
+        }
+      ]
+    },
+    {
+      "id": "baoyu-skills",
+      "name": "Baoyu Skills",
+      "nameZh": "宝玉技能集",
+      "description": "Baoyu's content-creation toolkit: AI image generation, infographics, slides, comics, translation, URL-to-Markdown, and posting to WeChat/Weibo/X.",
+      "descriptionZh": "宝玉的内容创作工具箱：AI 生图、信息图、幻灯片、漫画、翻译、网页转 Markdown，以及一键发布到微信/微博/X。",
+      "detail": "A Chinese-community favorite for content workflows. Generate covers, illustrations, infographics (21 layouts) and slide decks, compress images, turn URLs and tweets into clean Markdown, summarize WeChat group chats, grab YouTube transcripts, and publish straight to WeChat Official Accounts, Weibo or X. Some skills need external API keys or local CLI tools; several image generators support DashScope, GLM, MiniMax and other providers.",
+      "detailZh": "中文社区人气很高的内容工作流合集：生成封面、插图、信息图（21 种版式）与幻灯片，压缩图片，把网页和推文转成干净 Markdown，总结微信群聊，抓取 YouTube 字幕，并直接发布到微信公众号、微博或 X。部分技能需要外部 API 密钥或本地 CLI；多个生图技能支持 DashScope、GLM、MiniMax 等供应商。",
+      "url": "https://github.com/JimLiu/baoyu-skills",
+      "homepage": "https://github.com/JimLiu/baoyu-skills",
+      "skillCount": 21,
+      "skills": [
+        {
+          "name": "baoyu-article-illustrator",
+          "description": "Analyzes article structure, identifies positions requiring visual aids, generates illustrations with Type × Style × Palette three-dimension approach. Use when user asks to \"illustrate article\", \"add images\", \"generate images for article\", or \"为文章配图\".",
+          "descriptionZh": "分析文章结构，按「类型×风格×色板」三维生成配图。"
+        },
+        {
+          "name": "baoyu-comic",
+          "description": "Knowledge comic creator supporting multiple art styles and tones. Creates original educational comics with detailed panel layouts and batch-capable image generation. Use when user asks to create \"知识漫画\", \"教育漫画\", \"biography comic\", \"tutorial comic\", or \"Logicomi",
+          "descriptionZh": "多画风多基调的知识漫画创作，支持分镜与批量出图。"
+        },
+        {
+          "name": "baoyu-compress-image",
+          "description": "Compresses images to WebP (default) or PNG with automatic tool selection. Use when user asks to \"compress image\", \"optimize image\", \"convert to webp\", or reduce image file size.",
+          "descriptionZh": "把图片压缩为 WebP（默认）或 PNG，自动选工具。"
+        },
+        {
+          "name": "baoyu-cover-image",
+          "description": "Generates article cover images with 5 dimensions (type, palette, rendering, text, mood) combining 11 color palettes and 7 rendering styles. Supports cinematic (2.35:1), widescreen (16:9), and square (1:1) aspects. Use when user asks to \"generate cover image\", ",
+          "descriptionZh": "按类型/色板/渲染/文字/情绪五个维度生成文章封面图。"
+        },
+        {
+          "name": "baoyu-danger-gemini-web",
+          "description": "Generates images and text via reverse-engineered Gemini Web API. Supports text generation, image generation from prompts, reference images for vision input, and multi-turn conversations. Use when other skills need image generation backend, or when user request",
+          "descriptionZh": "经逆向 Gemini Web API 生图生文，需用户明确同意。"
+        },
+        {
+          "name": "baoyu-danger-x-to-markdown",
+          "description": "Converts X (Twitter) tweets and articles to markdown with YAML front matter. Uses reverse-engineered API requiring user consent. Use when user mentions \"X to markdown\", \"tweet to markdown\", \"save tweet\", or provides x.com/twitter.com URLs for conversion.",
+          "descriptionZh": "把 X（Twitter）推文与长文转成带 frontmatter 的 Markdown。"
+        },
+        {
+          "name": "baoyu-diagram",
+          "description": "Create professional, dark-themed SVG diagrams of any type — architecture diagrams, flowcharts, sequence diagrams, structural diagrams, mind maps, timelines, illustrative/conceptual diagrams, and more. Use this skill whenever the user asks for any kind of techn",
+          "descriptionZh": "生成专业深色主题 SVG 图：架构图、流程图、时序图、思维导图等。"
+        },
+        {
+          "name": "baoyu-electron-extract",
+          "description": "Extracts resources and JavaScript from any installed Electron app (`.asar` bundle), restoring original sources from `.js.map` files when available or formatting minified code with Prettier otherwise. Use when user wants to \"extract Electron app\", \"decompile El",
+          "descriptionZh": "从已安装 Electron 应用（.asar）抽取资源与 JS，可借 sourcemap 还原源码。"
+        },
+        {
+          "name": "baoyu-format-markdown",
+          "description": "Formats plain text or markdown files with frontmatter, titles, summaries, headings, bold, lists, and code blocks. Use when user asks to \"format markdown\", \"beautify article\", \"add formatting\", or improve article layout. Outputs to {filename}-formatted.md.",
+          "descriptionZh": "把纯文本/Markdown 排版成规范格式：frontmatter、标题、加粗、列表、代码块。"
+        },
+        {
+          "name": "baoyu-image-gen",
+          "description": "AI image generation with OpenAI GPT Image 2, Azure OpenAI, Google, OpenRouter, DashScope, Z.AI GLM-Image, MiniMax, Jimeng, Seedream, Replicate and Agnes APIs. Supports text-to-image, reference images, aspect ratios, and batch generation from saved prompt files",
+          "descriptionZh": "多供应商 AI 生图：OpenAI、Azure、Google、DashScope、GLM、MiniMax、即梦等。"
+        },
+        {
+          "name": "baoyu-infographic",
+          "description": "Generate professional infographics with 21 layout types and 22 visual styles. Analyzes content, recommends layout×style combinations, and generates publication-ready infographics. Use when user asks to create \"infographic\", \"信息图\", \"visual summary\", \"可视化\", or \"",
+          "descriptionZh": "21 种版式 × 22 种视觉风格的专业信息图生成。"
+        },
+        {
+          "name": "baoyu-markdown-to-html",
+          "description": "Converts Markdown to styled HTML with WeChat-compatible themes. Supports code highlighting, math, Mermaid (rendered to PNG via headless Chrome), PlantUML, footnotes, alerts, infographics, and optional bottom citations for external links. Use when user asks for",
+          "descriptionZh": "Markdown 转样式化 HTML：微信主题、代码高亮、数学、Mermaid/PlantUML。"
+        },
+        {
+          "name": "baoyu-post-to-wechat",
+          "description": "Posts content to WeChat Official Account (微信公众号) via API or Chrome CDP. Supports article posting (文章) with HTML, markdown, or plain text input, and image-text posting (贴图, formerly 图文) with multiple images. Markdown article workflows default to converting ordi",
+          "descriptionZh": "经 API 或 Chrome CDP 发布内容到微信公众号，支持图文。"
+        },
+        {
+          "name": "baoyu-post-to-weibo",
+          "description": "Posts content to Weibo (微博). Supports regular posts with text, images, and videos, and headline articles (头条文章) with Markdown input via Chrome CDP. Use when user asks to \"post to Weibo\", \"发微博\", \"发布微博\", \"publish to Weibo\", \"share on Weibo\", \"写微博\", or \"微博头条文章\".",
+          "descriptionZh": "发布微博：文字/图/视频，及 Markdown 头条文章。"
+        },
+        {
+          "name": "baoyu-post-to-x",
+          "description": "Posts content and articles to X (Twitter). Supports regular posts with images/videos and X Articles (long-form Markdown). In Codex, honor explicit requests for the Codex Chrome plugin/@chrome by using the Chrome Extension workflow; otherwise use Chrome Compute",
+          "descriptionZh": "发布 X（Twitter）帖文与长文，支持图/视频。"
+        },
+        {
+          "name": "baoyu-slide-deck",
+          "description": "Generates professional slide deck images from content. Creates outlines with style instructions, then generates individual slide images. Use when user asks to \"create slides\", \"make a presentation\", \"generate deck\", \"slide deck\", or \"PPT\".",
+          "descriptionZh": "从内容生成专业幻灯片：先大纲后逐页出图。"
+        },
+        {
+          "name": "baoyu-translate",
+          "description": "This skill should be used when the user asks to \"translate\", \"翻译\", \"精翻\", \"translate article\", \"translate to Chinese\", \"translate to English\", \"改成中文\", \"改成英文\", \"convert to Chinese\", \"localize\", \"本地化\", \"refined translation\", \"精细翻译\", \"proofread translation\", \"快速翻译",
+          "descriptionZh": "高质量文章翻译（「精翻」），保留格式与语气。"
+        },
+        {
+          "name": "baoyu-url-to-markdown",
+          "description": "Fetch any URL and convert to markdown using baoyu-fetch CLI (Chrome CDP with site-specific adapters). Built-in adapters for X/Twitter, YouTube transcripts, Hacker News threads, and generic pages via Defuddle. Handles login/CAPTCHA via interaction wait modes. U",
+          "descriptionZh": "抓任意 URL 转 Markdown，内置 X/YouTube 等站点适配。"
+        },
+        {
+          "name": "baoyu-wechat-summary",
+          "description": "Summarizes WeChat group chat highlights into a structured digest using the local wx-cli binary (https://github.com/jackwener/wx-cli). Generates a normal digest by default; a roast (毒舌) version is opt-in. Maintains per-group history (history.json + history-dige",
+          "descriptionZh": "用本地 wx-cli 汇总微信群聊要点成结构化日报。"
+        },
+        {
+          "name": "baoyu-xhs-images",
+          "description": "Generates infographic image card series with 12 visual styles, 8 layouts, and 3 color palettes. Breaks content into 1-10 cartoon-style image cards optimized for social media engagement. Use when user mentions \"小红书图片\", \"小红书种草\", \"小绿书\", \"微信图文\", \"微信贴图\", \"image car",
+          "descriptionZh": "生成小红书风格图文卡片系列：12 种视觉风格、8 种版式。"
+        },
+        {
+          "name": "baoyu-youtube-transcript",
+          "description": "Downloads YouTube video transcripts/subtitles and cover images by URL or video ID. Supports multiple languages, translation, chapters, and speaker identification. Caches raw data for fast re-formatting. Use when user asks to \"get YouTube transcript\", \"download",
+          "descriptionZh": "下载 YouTube 字幕与封面，支持多语言、翻译、章节与说话人。"
+        }
+      ]
+    },
+    {
+      "id": "ponytail",
+      "name": "Ponytail",
+      "nameZh": "Ponytail 极简主义技能",
+      "description": "Makes your agent channel the laziest senior dev: question whether code should exist at all, audit repos for over-engineering, track deliberate shortcuts as debt.",
+      "descriptionZh": "让你的 agent 像最懒的资深工程师一样思考：先质疑代码是否该存在，全仓审计过度设计，并把刻意走捷径的地方记成技术债。",
+      "detail": "Six skills of aggressive minimalism. ponytail forces the simplest solution that actually works; ponytail-review and ponytail-audit hunt over-engineering in a diff or the whole repo; ponytail-debt harvests 'ponytail:' comments into a tracked ledger; ponytail-gain shows the measured impact scoreboard. A useful counterweight to agent verbosity.",
+      "detailZh": "六个激进极简主义技能：ponytail 强制采用确实能跑的最简方案；ponytail-review 与 ponytail-audit 在 diff 和全仓范围猎杀过度设计；ponytail-debt 把代码里的「ponytail:」注释收进可持续跟踪的债务台账；ponytail-gain 展示实测收益记分板。是治 agent 话多代码多的良药。",
+      "url": "https://github.com/DietrichGebert/ponytail",
+      "homepage": "https://github.com/DietrichGebert/ponytail",
+      "skillCount": 6,
+      "skills": [
+        {
+          "name": "ponytail-audit",
+          "description": "Whole-repo audit for over-engineering. Like ponytail-review, but scans the entire codebase instead of a diff: a ranked list of what to delete, simplify, or replace with stdlib/native equivalents. Use when the user says \"audit this codebase\", \"audit for over-en",
+          "descriptionZh": "全仓过度设计审计：该删什么、该换成标准库什么。"
+        },
+        {
+          "name": "ponytail-debt",
+          "description": "Harvest every `ponytail:` comment in the codebase into a debt ledger, so the deliberate shortcuts and deferrals ponytail leaves behind get tracked instead of rotting into \"later means never\". Use when the user says \"ponytail debt\", \"/ponytail-debt\", \"what did ",
+          "descriptionZh": "收割代码里的「ponytail:」注释成债务台账，让捷径被跟踪而非烂掉。"
+        },
+        {
+          "name": "ponytail-gain",
+          "description": "Show ponytail's measured impact as a compact scoreboard: less code, less cost, more speed, from the benchmark medians. One-shot display, not a persistent mode, and not a per-repo number. Trigger: /ponytail-gain, \"ponytail gain\", \"what does ponytail save\", \"sho",
+          "descriptionZh": "展示 ponytail 实测收益记分板：更少代码、更少成本、更快。"
+        },
+        {
+          "name": "ponytail-help",
+          "description": "Quick-reference card for all ponytail modes, skills, and commands. One-shot display, not a persistent mode. Trigger: /ponytail-help, \"ponytail help\", \"what ponytail commands\", \"how do I use ponytail\".",
+          "descriptionZh": "所有 ponytail 模式、技能与命令的速查卡。"
+        },
+        {
+          "name": "ponytail-review",
+          "description": "Code review focused exclusively on over-engineering. Finds what to delete: reinvented standard library, unneeded dependencies, speculative abstractions, dead flexibility. One line per finding: location, what to cut, what replaces it. Use when the user says \"re",
+          "descriptionZh": "只盯过度设计的代码评审：该删什么、什么能替代。"
+        },
+        {
+          "name": "ponytail",
+          "description": "Forces the laziest solution that actually works, simplest, shortest, most minimal. Channels a senior dev who has seen everything: question whether the task needs to exist at all (YAGNI), reach for the standard library before custom code, native platform featur",
+          "descriptionZh": "强制「能跑的最简方案」：先质疑任务是否需要存在，优先标准库。"
+        }
+      ]
+    },
+    {
+      "id": "planning-with-files",
+      "name": "Planning with Files",
+      "nameZh": "文件化任务规划",
+      "description": "Manus-style persistent planning: task_plan.md, findings.md and progress.md on disk, so complex work survives context loss and /clear.",
+      "descriptionZh": "Manus 风格的持久化规划：task_plan.md、findings.md、progress.md 落在磁盘上，复杂任务在上下文丢失或 /clear 后仍可续接。",
+      "detail": "Keeps the plan itself as files instead of in-memory context: task_plan.md tracks the breakdown, findings.md accumulates discoveries, progress.md records where you are. The agent re-reads them after truncation, /clear or a fresh session and resumes. Ships six locale variants (en/zh/zht/de/es/ar) — keep the languages you actually use.",
+      "detailZh": "把计划本身落成文件：task_plan.md 记任务拆解、findings.md 攒过程发现、progress.md 记当前进度。上下文截断、/clear 或新会话后 agent 重读三件套即可续接工作。仓库含六种语言变体（英/简中/繁中/德/西/阿），按需保留常用语言即可。",
+      "url": "https://github.com/OthmanAdi/planning-with-files",
+      "homepage": "https://github.com/OthmanAdi/planning-with-files",
+      "skillCount": 6,
+      "skills": [
+        {
+          "name": "planning-with-files-ar",
+          "description": "نظام تخطيط الملفات بنمط Manus لتنظيم وتتبع تقدم المهام المعقدة. ينشئ ملفات task_plan.md و findings.md و progress.md. يُستخدم عند طلب التخطيط أو تحليل المهام أو تنظيم المشاريع أو تتبع التقدم أو الخطط متعددة الخطوات. يدعم الاستعادة التلقائية للجلسة بعد /clear. ك"
+        },
+        {
+          "name": "planning-with-files-de",
+          "description": "Manus-artiges Dateiplanungssystem zur Organisation und Verfolgung des Fortschritts komplexer Aufgaben. Erstellt task_plan.md, findings.md und progress.md. Wird verwendet, wenn der Benutzer plant, zerlegt oder organisiert: mehrstufige Projekte, Forschungsaufgab"
+        },
+        {
+          "name": "planning-with-files-es",
+          "description": "Sistema de planificación basado en archivos estilo Manus para organizar y rastrear el progreso de tareas complejas. Crea task_plan.md, findings.md y progress.md. Cuando el usuario solicita planificación, desglose u organización de proyectos multipaso, tareas d"
+        },
+        {
+          "name": "planning-with-files-zh",
+          "description": "基于 Manus 风格的文件规划系统，用于组织和跟踪复杂任务的进度。创建 task_plan.md、findings.md 和 progress.md 三个文件。当用户要求规划、拆解或组织多步骤项目、研究任务或需要超过5次工具调用的工作时使用。支持 /clear 后的自动会话恢复。触发词：任务规划、项目计划、制定计划、分解任务、多步骤规划、进度跟踪、文件规划、帮我规划、拆解项目"
+        },
+        {
+          "name": "planning-with-files-zht",
+          "description": "基於 Manus 風格的檔案規劃系統，用於組織和追蹤複雜任務的進度。建立 task_plan.md、findings.md 和 progress.md 三個檔案。當使用者要求規劃、拆解或組織多步驟專案、研究任務或需要超過5次工具呼叫的工作時使用。支援 /clear 後的自動會話恢復。觸發詞：任務規劃、專案計畫、制定計畫、分解任務、多步驟規劃、進度追蹤、檔案規劃、幫我規劃、拆解專案"
+        },
+        {
+          "name": "planning-with-files",
+          "description": "Manus-style persistent file-based planning for AI coding agents: keeps task_plan.md, findings.md, and progress.md on disk so work survives context loss and /clear. Use when asked to plan out, break down, or organize a multi-step project, research task, or any ",
+          "descriptionZh": "Manus 风格持久化规划：task_plan/findings/progress 三文件让工作跨上下文存活。"
+        }
+      ]
+    },
+    {
+      "id": "scientific-agent-skills",
+      "skillCount": 163,
+      "name": "Scientific Agent Skills",
+      "nameZh": "科研技能库",
+      "description": "K-Dense's library of 160+ domain skills for research: bioinformatics, chemistry, machine learning, quantum computing, clinical reports, citation management.",
+      "descriptionZh": "K-Dense 维护的 160+ 个科研领域技能：生物信息、化学、机器学习、量子计算、临床报告、文献管理。",
+      "detail": "The largest domain-skills library in the ecosystem: 163 maintained skills across bioinformatics (biopython, anndata, scanpy-style workflows), chemistry and drug discovery (deepchem, rdkit, diffdock), quantum computing (cirq), data stacks (dask, database lookups) and research practice (citation management, clinical reports, literature search). The per-skill list is too long for this page — browse it on the repo homepage. Installing adds the whole library to your scan roots.",
+      "detailZh": "生态里最大的领域技能库：163 个技能覆盖生物信息（biopython、anndata 等工作流）、化学与药物发现（deepchem、rdkit、diffdock）、量子计算（cirq）、数据栈（dask、数据库检索）与科研实务（文献管理、临床报告、论文检索）。逐技能清单太长，本页不展开——完整目录见仓库主页。安装会把整个库加入扫描目录。",
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "homepage": "https://github.com/K-Dense-AI/scientific-agent-skills"
     }
   ]
 }

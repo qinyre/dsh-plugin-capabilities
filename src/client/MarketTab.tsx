@@ -129,6 +129,8 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
   const pick = <T,>(base: T, zh: T | undefined): T => (zhUi() && zh !== undefined ? zh : base)
   const title = (entry: { name: string; nameZh?: string }): string => pick(entry.name, entry.nameZh)
   const desc = (entry: { description: string; descriptionZh?: string }): string => pick(entry.description, entry.descriptionZh)
+  const longText = (entry: { description: string; descriptionZh?: string; detail?: string; detailZh?: string }): string =>
+    entry.detail !== undefined ? pick(entry.detail, entry.detailZh) : desc(entry)
 
   const cardStop = (event: { stopPropagation(): void }): void => { event.stopPropagation() }
 
@@ -296,20 +298,27 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
       >
         {detailRepo !== null && (
           <>
-            <p className="dpc-detailDesc">{desc(detailRepo)}</p>
+            <p className="dpc-detailDesc">{longText(detailRepo)}</p>
             {detailRepo.skills !== undefined && detailRepo.skills.length > 0 && (
               <div className="dpc-detailSection">
                 <div className="dpc-detailLabel">{t('marketSkillListLabel')}</div>
-                <div className="dpc-detailTags">
-                  {detailRepo.skills.map(name => <span className="dpc-tag" key={name}>{name}</span>)}
-                </div>
+                <ul className="dpc-skillList">
+                  {detailRepo.skills.map(item => (
+                    <li className="dpc-skillItem" key={item.name}>
+                      <code className="dpc-skillName">{item.name}</code>
+                      {item.description !== undefined && (
+                        <span className="dpc-skillDesc">{pick(item.description, item.descriptionZh)}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </>
         )}
         {detailServer !== null && (
           <>
-            <p className="dpc-detailDesc">{desc(detailServer)}</p>
+            <p className="dpc-detailDesc">{longText(detailServer)}</p>
             {detailServer.command !== undefined && (
               <div className="dpc-detailSection">
                 <div className="dpc-detailLabel">{t('marketCommandLabel')}</div>

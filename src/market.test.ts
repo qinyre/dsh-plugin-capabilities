@@ -8,11 +8,13 @@ const okJson = (body: unknown): typeof fetch =>
 describe('loadMarketIndex', () => {
   it('prefers a valid remote index', async () => {
     const index = await loadMarketIndex('skills', {
-      fetcher: okJson({ repos: [{ id: 'r1', name: 'Repo', description: 'd', url: 'https://github.com/a/b', skills: ['s1', 's2'] }] }),
+      fetcher: okJson({ repos: [{ id: 'r1', name: 'Repo', description: 'd', url: 'https://github.com/a/b', detail: 'long', detailZh: '长文', skills: [{ name: 's1', description: 'first', descriptionZh: '第一个' }, { name: 's2' }, 'junk'] }] }),
     })
     expect(index?.source).toBe('remote')
     expect(index?.skills?.[0]?.id).toBe('r1')
-    expect(index?.skills?.[0]?.skills).toEqual(['s1', 's2'])
+    expect(index?.skills?.[0]?.detail).toBe('long')
+    expect(index?.skills?.[0]?.detailZh).toBe('长文')
+    expect(index?.skills?.[0]?.skills).toEqual([{ name: 's1', description: 'first', descriptionZh: '第一个' }, { name: 's2' }])
   })
 
   it('falls back to the bundled snapshot when remote is unreachable or invalid', async () => {
@@ -30,7 +32,7 @@ describe('loadMarketIndex', () => {
     const index = await loadMarketIndex('mcp', {
       fetcher: okJson({
         servers: [
-          { id: 'ok', name: 'OK', description: 'd', transport: 'stdio', command: 'npx', args: ['-y', 'x'], envKeys: ['K'], homepage: 'https://x', tools: ['t1'] },
+          { id: 'ok', name: 'OK', description: 'd', transport: 'stdio', command: 'npx', args: ['-y', 'x'], envKeys: ['K'], homepage: 'https://x', tools: ['t1'], detail: 'long' },
           { id: 'no-command', name: 'Bad', description: 'd', transport: 'stdio', homepage: 'https://x' },
           { id: 'no-home', name: 'Bad2', description: 'd', transport: 'stdio', command: 'npx' },
           'not an object',
@@ -39,7 +41,7 @@ describe('loadMarketIndex', () => {
     })
     expect(index?.source).toBe('remote')
     expect(index?.servers).toHaveLength(1)
-    expect(index?.servers?.[0]).toMatchObject({ id: 'ok', envKeys: ['K'], tools: ['t1'] })
+    expect(index?.servers?.[0]).toMatchObject({ id: 'ok', envKeys: ['K'], tools: ['t1'], detail: 'long' })
   })
 
   it('ships parseable bundled snapshots with expected top-level shape', () => {

@@ -13,6 +13,13 @@ import { fileURLToPath } from 'node:url'
 /** Which catalog a request wants. */
 export type MarketKind = 'skills' | 'mcp'
 
+/** One skill inside a market repository's inventory. */
+export interface MarketSkillItem {
+  name: string
+  description?: string
+  descriptionZh?: string
+}
+
 /** One installable skill repository in the skills index. */
 export interface MarketSkillRepo {
   id: string
@@ -20,11 +27,14 @@ export interface MarketSkillRepo {
   nameZh?: string
   description: string
   descriptionZh?: string
+  /** Long-form intro for the detail view (falls back to description). */
+  detail?: string
+  detailZh?: string
   url: string
   homepage?: string
   skillCount?: number
-  /** Skill names inside the repository, for the market detail view. */
-  skills?: string[]
+  /** Skill inventory for the market detail view. */
+  skills?: MarketSkillItem[]
 }
 
 /** One installable server in the MCP index. */
@@ -45,6 +55,9 @@ export interface MarketMcpServer {
   runtime?: string
   /** Tool names the server exposes, for the market detail view. */
   tools?: string[]
+  /** Long-form intro for the detail view (falls back to description). */
+  detail?: string
+  detailZh?: string
 }
 
 export interface MarketIndex {
@@ -66,6 +79,22 @@ export function bundledMarketPath(kind: MarketKind): string {
 const isString = (value: unknown): value is string => typeof value === 'string' && value !== ''
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every(isString)
 
+function parseSkillItems(value: unknown): MarketSkillItem[] | null {
+  if (!Array.isArray(value)) return null
+  const out: MarketSkillItem[] = []
+  for (const item of value) {
+    if (typeof item !== 'object' || item === null) continue
+    const record = item as Record<string, unknown>
+    if (!isString(record.name)) continue
+    out.push({
+      name: record.name,
+      ...isString(record.description) ? { description: record.description } : {},
+      ...isString(record.descriptionZh) ? { descriptionZh: record.descriptionZh } : {},
+    })
+  }
+  return out.length > 0 ? out : null
+}
+
 function parseSkillsIndex(parsed: unknown): MarketSkillRepo[] | null {
   if (typeof parsed !== 'object' || parsed === null) return null
   const repos = (parsed as { repos?: unknown }).repos
@@ -75,16 +104,19 @@ function parseSkillsIndex(parsed: unknown): MarketSkillRepo[] | null {
     if (typeof entry !== 'object' || entry === null) continue
     const record = entry as Record<string, unknown>
     if (!isString(record.id) || !isString(record.name) || !isString(record.description) || !isString(record.url)) continue
+    const skills = parseSkillItems(record.skills)
     out.push({
       id: record.id,
       name: record.name,
       ...isString(record.nameZh) ? { nameZh: record.nameZh } : {},
       description: record.description,
       ...isString(record.descriptionZh) ? { descriptionZh: record.descriptionZh } : {},
+      ...isString(record.detail) ? { detail: record.detail } : {},
+      ...isString(record.detailZh) ? { detailZh: record.detailZh } : {},
       url: record.url,
       ...isString(record.homepage) ? { homepage: record.homepage } : {},
       ...(typeof record.skillCount === 'number' ? { skillCount: record.skillCount } : {}),
-      ...isStringArray(record.skills) ? { skills: record.skills } : {},
+      ...(skills !== null ? { skills } : {}),
     })
   }
   return out.length > 0 ? out : null
@@ -117,6 +149,8 @@ function parseMcpIndex(parsed: unknown): MarketMcpServer[] | null {
       ...isString(record.category) ? { category: record.category } : {},
       ...isString(record.runtime) ? { runtime: record.runtime } : {},
       ...isStringArray(record.tools) ? { tools: record.tools } : {},
+      ...isString(record.detail) ? { detail: record.detail } : {},
+      ...isString(record.detailZh) ? { detailZh: record.detailZh } : {},
     })
   }
   return out.length > 0 ? out : null

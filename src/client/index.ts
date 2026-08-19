@@ -131,6 +131,13 @@ export function apply(ctx: CapabilitiesClientContext): void {
   })
 }
 
+/** One skill inside a market repository's inventory, as the browser sees it. */
+export interface MarketSkillItemView {
+  name: string
+  description?: string
+  descriptionZh?: string
+}
+
 /** One skills-market repository as the browser sees it. */
 export interface MarketRepoView {
   id: string
@@ -138,10 +145,12 @@ export interface MarketRepoView {
   nameZh?: string
   description: string
   descriptionZh?: string
+  detail?: string
+  detailZh?: string
   url: string
   homepage?: string
   skillCount?: number
-  skills?: string[]
+  skills?: MarketSkillItemView[]
 }
 
 /** One MCP-market server as the browser sees it. */
@@ -160,4 +169,6 @@ export interface MarketServerView {
   category?: string
   runtime?: string
   tools?: string[]
+  detail?: string
+  detailZh?: string
 }

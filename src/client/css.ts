@@ -113,5 +113,9 @@ export const CSS = `
 .dpc-detailSection{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .dpc-detailLabel{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
 .dpc-detailTags{display:flex;flex-wrap:wrap;gap:4px}
+.dpc-skillList{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.dpc-skillItem{display:flex;gap:8px;align-items:baseline;font-size:12px;line-height:18px;min-width:0}
+.dpc-skillName{font-family:var(--ds-font-family-code);color:var(--dsw-alias-label-primary);white-space:nowrap;flex:none}
+.dpc-skillDesc{color:var(--dsw-alias-label-secondary);min-width:0}
 @media(max-width:680px){.dpc-cards{grid-template-columns:minmax(0,1fr)}}
 `

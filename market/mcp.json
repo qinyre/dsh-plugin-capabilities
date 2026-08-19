@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-18",
+  "updatedAt": "2026-08-19",
   "servers": [
     {
       "id": "filesystem",
@@ -10,11 +10,29 @@
       "descriptionZh": "受控目录的读写访问。默认参数 \".\" 只放开 dsh 工作目录，安装后可编辑该行，列出你要开放的具体目录。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
       "category": "files",
       "runtime": "npx (Node.js)",
-      "tools": ["read_file", "read_multiple_files", "write_file", "edit_file", "create_directory", "list_directory", "directory_tree", "move_file", "search_files", "get_file_info", "list_allowed_directories"]
+      "tools": [
+        "read_file",
+        "read_multiple_files",
+        "write_file",
+        "edit_file",
+        "create_directory",
+        "list_directory",
+        "directory_tree",
+        "move_file",
+        "search_files",
+        "get_file_info",
+        "list_allowed_directories"
+      ],
+      "detail": "Read/write access to the directories you list as arguments. Every file operation is a separate tool call (read_file, edit_file, directory_tree...), so the model sees exactly what changed. Edit the row after install to replace the default '.' with the roots you want to expose.",
+      "detailZh": "对参数中列出的目录进行读写。每个文件操作都是独立工具调用（read_file、edit_file、directory_tree 等），模型能精确看到每处改动。安装后编辑该行，把默认的「.」换成你要开放的具体目录。"
     },
     {
       "id": "memory",
@@ -24,11 +42,26 @@
       "descriptionZh": "跨会话的持久知识图谱记忆（实体、关系、观察）。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
       "category": "knowledge",
       "runtime": "npx (Node.js)",
-      "tools": ["create_entities", "create_relations", "add_observations", "delete_entities", "delete_observations", "delete_relations", "read_graph", "search_nodes", "open_nodes"]
+      "tools": [
+        "create_entities",
+        "create_relations",
+        "add_observations",
+        "delete_entities",
+        "delete_observations",
+        "delete_relations",
+        "read_graph",
+        "search_nodes",
+        "open_nodes"
+      ],
+      "detail": "A persistent knowledge graph stored as JSONL: entities, relations and observations accumulate across sessions. Good for long-running projects where the agent should remember decisions, people and facts without re-reading transcripts.",
+      "detailZh": "以 JSONL 持久化的知识图谱：实体、关系与观察跨会话累积。适合长线项目，让 agent 不必重读记录就记得决策、人物与事实。"
     },
     {
       "id": "sequentialthinking",
@@ -38,11 +71,18 @@
       "descriptionZh": "通过结构化的思考链进行动态、反思式的问题求解。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequentialthinking"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequentialthinking"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
       "category": "reasoning",
       "runtime": "npx (Node.js)",
-      "tools": ["sequentialthinking"]
+      "tools": [
+        "sequentialthinking"
+      ],
+      "detail": "A single tool that lets the model externalize its reasoning: revise earlier thoughts, branch into alternatives, backtrack when a line of reasoning dead-ends. A token-cheap way to improve multi-step reasoning quality.",
+      "detailZh": "只有一个工具，让模型把推理过程外化：可修改前文思路、分支探索、走不通时回退。提升多步推理质量的低成本手段。"
     },
     {
       "id": "everything",
@@ -52,11 +92,23 @@
       "descriptionZh": "覆盖 MCP 全部能力的参考服务器——提示、资源、工具、采样，适合验证客户端配置。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-everything"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
       "category": "test",
       "runtime": "npx (Node.js)",
-      "tools": ["echo", "add", "sampleLLM", "longRunningOperation", "getTinyImage", "annotatedMessage"]
+      "tools": [
+        "echo",
+        "add",
+        "sampleLLM",
+        "longRunningOperation",
+        "getTinyImage",
+        "annotatedMessage"
+      ],
+      "detail": "The MCP reference server that exercises every feature: prompts, resources, tools, sampling, notifications. Not useful for real work; use it to verify a client or transport setup end to end.",
+      "detailZh": "MCP 官方参考服务器，覆盖全部特性：提示、资源、工具、采样、通知。不适合干正事，用来端到端验证客户端或传输配置。"
     },
     {
       "id": "git",
@@ -66,11 +118,64 @@
       "descriptionZh": "操作本地 Git 仓库：状态、差异、分支、提交、标签。",
       "transport": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-git"],
+      "args": [
+        "mcp-server-git"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
       "category": "dev",
       "runtime": "uvx (Python/uv)",
-      "tools": ["git_status", "git_diff_unstaged", "git_diff_staged", "git_diff", "git_add", "git_commit", "git_reset", "git_log", "git_create_branch", "git_checkout_branch", "git_list_branches", "git_create_tag", "git_delete_tag", "git_list_tags", "git_push", "git_pull"]
+      "tools": [
+        "git_status",
+        "git_diff_unstaged",
+        "git_diff_staged",
+        "git_diff",
+        "git_add",
+        "git_commit",
+        "git_reset",
+        "git_log",
+        "git_create_branch",
+        "git_checkout_branch",
+        "git_list_branches",
+        "git_create_tag",
+        "git_delete_tag",
+        "git_list_tags",
+        "git_push",
+        "git_pull"
+      ],
+      "detail": "Read-mostly Git operations on local repositories: status, diffs, branches, log, plus commit/push/pull. Safer than a shell for routine Git questions because the tool surface is bounded; runs via uvx (needs Python/uv).",
+      "detailZh": "对本地仓库的 Git 操作，以读为主：状态、差异、分支、日志，外加提交/推送/拉取。相比直接开 shell，工具面收窄更安全；经 uvx 运行（需要 Python/uv）。"
+    },
+    {
+      "id": "serena",
+      "name": "Serena",
+      "nameZh": "Serena 语义代码工具包",
+      "description": "Semantic code intelligence over language servers: find symbols and references, read and edit precise ranges instead of whole files.",
+      "descriptionZh": "基于语言服务器的语义代码工具：找符号与引用，按精确范围读写而非整文件。",
+      "transport": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server"
+      ],
+      "homepage": "https://github.com/oraios/serena",
+      "category": "dev",
+      "runtime": "uvx (Python/uv)",
+      "tools": [
+        "find_symbol",
+        "find_referencing_symbols",
+        "get_symbols_overview",
+        "get_body",
+        "search_for_pattern",
+        "list_dir",
+        "create_file",
+        "edit_file",
+        "full_file_read",
+        "think_about_collected_information"
+      ],
+      "detail": "A free, local alternative to hosted coding agents: Serena wires LSP language servers into MCP so the model navigates code semantically — find_symbol, find_referencing_symbols, read or edit a function's body — token-efficiently on huge codebases. Configures languages on first run; served over uvx from git.",
+      "detailZh": "托管式编码 agent 的免费本地替代：Serena 把 LSP 语言服务器接进 MCP，让模型按语义导航代码——找符号、找引用、只读写函数体——在超大代码库上省 token。首次运行自动配置语言；经 uvx 从 git 拉取运行。"
     },
     {
       "id": "fetch",
@@ -80,11 +185,17 @@
       "descriptionZh": "网页内容抓取与转换，面向 LLM 使用优化。",
       "transport": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-fetch"],
+      "args": [
+        "mcp-server-fetch"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
       "category": "web",
       "runtime": "uvx (Python/uv)",
-      "tools": ["fetch"]
+      "tools": [
+        "fetch"
+      ],
+      "detail": "Fetches a web page and converts it to clean Markdown sized for LLM context; respects robots.txt. The go-to tool when the model needs to read one URL without spinning up a browser.",
+      "detailZh": "抓取网页并转成适合 LLM 上下文的干净 Markdown，遵循 robots.txt。模型需要不开浏览器读一个链接时的首选工具。"
     },
     {
       "id": "sqlite",
@@ -94,11 +205,24 @@
       "descriptionZh": "SQLite 数据库访问，支持结构检查与查询分析。安装后可编辑该行的 --db-path 参数。",
       "transport": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-sqlite", "--db-path", "sqlite.db"],
+      "args": [
+        "mcp-server-sqlite",
+        "--db-path",
+        "sqlite.db"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite",
       "category": "data",
       "runtime": "uvx (Python/uv)",
-      "tools": ["read_query", "write_query", "create_table", "list_tables", "describe_table", "append_insight"]
+      "tools": [
+        "read_query",
+        "write_query",
+        "create_table",
+        "list_tables",
+        "describe_table",
+        "append_insight"
+      ],
+      "detail": "Direct SQL against a SQLite file: read queries, schema inspection (list/describe tables) and an insights log. Edit the row's --db-path argument after installing to point at your database.",
+      "detailZh": "直接对 SQLite 文件执行 SQL：读查询、表结构检查（列表/描述）与洞察日志。安装后编辑该行的 --db-path 参数指向你的数据库。"
     },
     {
       "id": "time",
@@ -108,11 +232,18 @@
       "descriptionZh": "当前时间查询与时区转换。",
       "transport": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-time"],
+      "args": [
+        "mcp-server-time"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/time",
       "category": "knowledge",
       "runtime": "uvx (Python/uv)",
-      "tools": ["get_current_time", "convert_time"]
+      "tools": [
+        "get_current_time",
+        "convert_time"
+      ],
+      "detail": "Current time in any IANA timezone and conversion between zones with proper DST handling. Solves the classic 'agent thinks it is yesterday' problem.",
+      "detailZh": "按 IANA 时区查当前时间并在时区间换算，正确处理夏令时。专治「agent 以为还是昨天」这类经典问题。"
     },
     {
       "id": "github",
@@ -122,12 +253,45 @@
       "descriptionZh": "仓库、Issue、PR 等操作。安装后需在环境变量中填入个人访问令牌。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "envKeys": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "envKeys": [
+        "GITHUB_PERSONAL_ACCESS_TOKEN"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/github",
       "category": "dev",
       "runtime": "npx (Node.js)",
-      "tools": ["create_or_update_file", "create_branch", "create_issue", "add_issue_comment", "create_pull_request", "create_pull_request_review", "fork_repository", "push_files", "get_file_contents", "get_issue", "get_pull_request", "get_pull_request_files", "get_pull_request_status", "get_pull_request_comments", "list_commits", "list_issues", "list_pull_requests", "list_branches", "merge_pull_request", "search_code", "search_issues", "search_repositories", "search_users", "update_issue", "update_pull_request_branch"]
+      "tools": [
+        "create_or_update_file",
+        "create_branch",
+        "create_issue",
+        "add_issue_comment",
+        "create_pull_request",
+        "create_pull_request_review",
+        "fork_repository",
+        "push_files",
+        "get_file_contents",
+        "get_issue",
+        "get_pull_request",
+        "get_pull_request_files",
+        "get_pull_request_status",
+        "get_pull_request_comments",
+        "list_commits",
+        "list_issues",
+        "list_pull_requests",
+        "list_branches",
+        "merge_pull_request",
+        "search_code",
+        "search_issues",
+        "search_repositories",
+        "search_users",
+        "update_issue",
+        "update_pull_request_branch"
+      ],
+      "detail": "The official GitHub MCP server: issues, PRs, reviews, branches, file contents, code/issue/repo search. Needs a personal access token in GITHUB_PERSONAL_ACCESS_TOKEN; the token's scopes decide what it may touch.",
+      "detailZh": "GitHub 官方 MCP 服务器：Issue、PR、评审、分支、文件内容、代码/Issue/仓库搜索。需要在环境变量 GITHUB_PERSONAL_ACCESS_TOKEN 里填个人访问令牌，能碰什么由令牌 scope 决定。"
     },
     {
       "id": "brave-search",
@@ -137,12 +301,49 @@
       "descriptionZh": "通过 Brave API 进行网页/本地/图片/新闻搜索，需要 Brave API 密钥。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-      "envKeys": ["BRAVE_API_KEY"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "envKeys": [
+        "BRAVE_API_KEY"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/brave-search",
       "category": "web",
       "runtime": "npx (Node.js)",
-      "tools": ["brave_web_search", "brave_local_search"]
+      "tools": [
+        "brave_web_search",
+        "brave_local_search"
+      ],
+      "detail": "Web, news, image and local search through the Brave Search API — an independent index, not a Google/Bing reseller. Register at brave.com/search/api for the free tier and put the key in BRAVE_API_KEY after install.",
+      "detailZh": "经 Brave Search API 的网页/新闻/图片/本地搜索——独立索引，不是 Google/Bing 的转售。到 brave.com/search/api 注册免费档，装好后把密钥填进 BRAVE_API_KEY。"
+    },
+    {
+      "id": "tavily",
+      "name": "Tavily",
+      "nameZh": "Tavily 搜索",
+      "description": "LLM-oriented search, extraction, crawling and site mapping via the Tavily API. Free tier available; key goes in TAVILY_API_KEY.",
+      "descriptionZh": "面向 LLM 的搜索、抽取、爬取与站点地图（Tavily API）。有免费额度；密钥填在 TAVILY_API_KEY。",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "tavily-mcp"
+      ],
+      "envKeys": [
+        "TAVILY_API_KEY"
+      ],
+      "homepage": "https://github.com/tavily-ai/tavily-mcp",
+      "category": "web",
+      "runtime": "npx (Node.js)",
+      "tools": [
+        "tavily-search",
+        "tavily-extract",
+        "tavily-crawl",
+        "tavily-map"
+      ],
+      "detail": "A search stack built for agents: tavily-search returns LLM-ready synthesized results, tavily-extract pulls clean content from URLs, tavily-crawl walks whole sites and tavily-map returns a site's page structure. A popular default for giving an agent web research. Register at tavily.com for a free key.",
+      "detailZh": "专为 agent 打造的搜索全家桶：tavily-search 返回适合 LLM 直接用的合成结果，tavily-extract 从 URL 抽干净正文，tavily-crawl 爬整站，tavily-map 给出站点页面结构。给 agent 配联网调研能力的流行默认选择。到 tavily.com 注册可得免费密钥。"
     },
     {
       "id": "puppeteer",
@@ -152,11 +353,88 @@
       "descriptionZh": "浏览器自动化：导航、截图、点击、表单填写、JS 执行。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
       "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer",
       "category": "web",
       "runtime": "npx (Node.js)",
-      "tools": ["puppeteer_navigate", "puppeteer_screenshot", "puppeteer_click", "puppeteer_fill", "puppeteer_evaluate", "puppeteer_select"]
+      "tools": [
+        "puppeteer_navigate",
+        "puppeteer_screenshot",
+        "puppeteer_click",
+        "puppeteer_fill",
+        "puppeteer_evaluate",
+        "puppeteer_select"
+      ],
+      "detail": "Drives a real Chromium: navigate, screenshot, click, fill forms, evaluate JS. A full browser stack with no site-specific logic; for accessibility-tree-driven automation see the Playwright entry instead.",
+      "detailZh": "驱动真实 Chromium：导航、截图、点击、填表、执行 JS。纯浏览器栈、无站点适配逻辑；要基于无障碍树的自动化请看 Playwright 那条。"
+    },
+    {
+      "id": "playwright",
+      "name": "Playwright",
+      "nameZh": "Playwright 浏览器",
+      "description": "Microsoft's official browser automation MCP: drives a real browser through the accessibility tree — navigate, click, type, screenshot — no vision model needed.",
+      "descriptionZh": "微软官方浏览器自动化 MCP：经无障碍树驱动真实浏览器——导航、点击、输入、截图——不需要视觉模型。",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "homepage": "https://github.com/microsoft/playwright-mcp",
+      "category": "web",
+      "runtime": "npx (Node.js)",
+      "tools": [
+        "browser_navigate",
+        "browser_click",
+        "browser_type",
+        "browser_select_option",
+        "browser_snapshot",
+        "browser_evaluate",
+        "browser_console_messages",
+        "browser_network_requests",
+        "browser_wait_for",
+        "browser_handle_dialog",
+        "browser_screenshot",
+        "browser_install"
+      ],
+      "detail": "Microsoft's official Playwright MCP. The model interacts with pages via the accessibility snapshot rather than screenshots, so it is fast and works headless; the managed browser is one browser_install away. Tab management, console and network inspection, file upload and dialogs are first-class. The modern default for web automation.",
+      "detailZh": "微软官方 Playwright MCP。模型通过无障碍快照而非截图与页面交互，速度快且可无头运行；托管浏览器一条 browser_install 就装好。标签页管理、控制台/网络检查、文件上传与对话框都是一等公民。当下网页自动化的默认选择。"
+    },
+    {
+      "id": "chrome-devtools",
+      "name": "Chrome DevTools",
+      "nameZh": "Chrome DevTools",
+      "description": "Google's official DevTools MCP: drive Chrome with snapshots, clicks and forms, plus performance traces, console and network inspection.",
+      "descriptionZh": "Google 官方 DevTools MCP：快照、点击、表单驱动 Chrome，附带性能 trace、控制台与网络检查。",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "category": "dev",
+      "runtime": "npx (Node.js)",
+      "tools": [
+        "navigate_page",
+        "take_snapshot",
+        "take_screenshot",
+        "click_element",
+        "fill_form",
+        "evaluate_script",
+        "new_page",
+        "list_pages",
+        "select_page",
+        "performance_start_trace",
+        "performance_stop_trace",
+        "list_console_messages",
+        "list_network_requests"
+      ],
+      "detail": "From the Chrome DevTools team: page automation via accessibility snapshots (navigate, click, fill, evaluate) plus the DevTools-native superpowers — CPU and network performance traces, console messages, network request logs. Pick it when you are debugging a slow page rather than automating it.",
+      "detailZh": "Chrome DevTools 团队出品：经无障碍快照自动化页面（导航/点击/表单/执行 JS），外加 DevTools 看家本领——CPU/网络性能 trace、控制台消息、网络请求日志。调试慢页面（而非纯自动化）时选它。"
     },
     {
       "id": "context7",
@@ -166,11 +444,19 @@
       "descriptionZh": "获取各类库与框架的最新版本文档与代码示例。",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
       "homepage": "https://github.com/upstash/context7",
       "category": "knowledge",
       "runtime": "npx (Node.js)",
-      "tools": ["resolve-library-id", "get-library-docs"]
+      "tools": [
+        "resolve-library-id",
+        "get-library-docs"
+      ],
+      "detail": "Pulls up-to-date, version-pinned documentation for any library: resolve-library-id finds the doc set, get-library-docs returns topic-scoped pages with code examples. Stops the model answering from stale training data.",
+      "detailZh": "为任意库拉取最新且锁版本的文档：resolve-library-id 定位文档集，get-library-docs 返回带代码示例的按题取材页面。防止模型用训练数据里的旧 API 答题。"
     }
   ]
 }
