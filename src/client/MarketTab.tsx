@@ -260,6 +260,9 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
         open={detailRepo !== null || detailServer !== null}
         onClose={() => setDetail(null)}
         title={detailRepo !== null ? title(detailRepo) : detailServer !== null ? title(detailServer) : ''}
+        closeLabel={t('close')}
+        className="dpc-marketDialog"
+        contentClassName="dpc-marketContent"
         footer={
           <>
             {detailRepo !== null && (
@@ -296,6 +299,24 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
           </>
         }
       >
+        {(detailRepo !== null || detailServer !== null) && (
+          <div className="dpc-detailTagsRow">
+            {detailRepo !== null && detailRepo.skillCount !== undefined && (
+              <span className="dpc-tag">{t('marketSkillCount').replace('{n}', String(detailRepo.skillCount))}</span>
+            )}
+            {detailRepo !== null && detailRepo.installedId !== null && (
+              <span className="dpc-tag" data-kind="source">{t('marketInstalled')}</span>
+            )}
+            {detailServer !== null && (
+              <>
+                <span className="dpc-tag">{detailServer.transport}</span>
+                {detailServer.runtime !== undefined && <span className="dpc-tag">{detailServer.runtime}</span>}
+                {detailServer.category !== undefined && <span className="dpc-tag">{detailServer.category}</span>}
+                {detailServer.installed && <span className="dpc-tag" data-kind="source">{t('marketInstalled')}</span>}
+              </>
+            )}
+          </div>
+        )}
         {detailRepo !== null && (
           <>
             <p className="dpc-detailDesc">{longText(detailRepo)}</p>

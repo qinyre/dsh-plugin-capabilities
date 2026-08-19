@@ -108,14 +108,21 @@ export const CSS = `
 .dpc-format .dpc-form{margin-top:8px}
 .dpc-formatHint{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary)}
 .dpc-code{margin:4px 0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:8px 10px;overflow-x:auto;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);font-family:var(--ds-font-family-code);font-size:11px;line-height:17px;white-space:pre}
-/* Market detail modal. */
+/* Market detail modal. The host dialog card is a fixed 380px column with no
+   scroll, which the long-form intros turn into a clipped strip — widen it
+   (doubled selector outranks the module class regardless of style order),
+   cap the height, and scroll inside the content region. */
+.dpc-marketDialog.dpc-marketDialog{width:min(720px,100%);max-height:calc(100vh - 48px)}
+.dpc-marketContent{overflow-y:auto;min-height:0}
+.dpc-detailTagsRow{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 8px}
 .dpc-detailDesc{margin:0;font-size:13px;line-height:20px}
-.dpc-detailSection{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.dpc-detailSection{margin-top:14px;display:flex;flex-direction:column;gap:6px}
 .dpc-detailLabel{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
 .dpc-detailTags{display:flex;flex-wrap:wrap;gap:4px}
-.dpc-skillList{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.dpc-skillList{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px}
 .dpc-skillItem{display:flex;gap:8px;align-items:baseline;font-size:12px;line-height:18px;min-width:0}
 .dpc-skillName{font-family:var(--ds-font-family-code);color:var(--dsw-alias-label-primary);white-space:nowrap;flex:none}
 .dpc-skillDesc{color:var(--dsw-alias-label-secondary);min-width:0}
+@media(max-width:560px){.dpc-skillList{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:680px){.dpc-cards{grid-template-columns:minmax(0,1fr)}}
 `
