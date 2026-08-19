@@ -8,8 +8,9 @@
  * provider.
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, symlinkSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
+import { removeTree } from './rmtree.ts'
 import { addSkillRoot, findRootByUrl, materialDirFor, newEntryId, type SkillRootEntry } from './state.ts'
 import { extractTarGz } from './tar.ts'
 
@@ -141,12 +142,12 @@ export async function addLocalRepo(path: string, dshHome?: string): Promise<Skil
     // the path in a dedicated directory holding a single link to it.
     const id = newEntryId('local')
     const material = materialDirFor(id, dshHome)
-    rmSync(material, { recursive: true, force: true })
+    removeTree(material)
     mkdirSync(material, { recursive: true })
     try {
       symlinkSync(resolved, join(material, 'skill'), process.platform === 'win32' ? 'junction' : 'dir')
     } catch {
-      rmSync(material, { recursive: true, force: true })
+      removeTree(material)
       throw new Error('single-skill local folders need a directory link; try adding their parent folder instead')
     }
     return addSkillRoot({ id, kind: 'local', label: basename(resolved), path: resolved, roots: [material], materialDir: material }, dshHome)
@@ -175,7 +176,7 @@ export async function addGitRepo(
 
   const id = newEntryId('git')
   const material = materialDirFor(id, options.dshHome)
-  rmSync(material, { recursive: true, force: true })
+  removeTree(material)
   const checkout = join(material, 'repo')
   try {
     mkdirSync(checkout, { recursive: true })
@@ -192,7 +193,7 @@ export async function addGitRepo(
       options.dshHome,
     )
   } catch (error) {
-    rmSync(material, { recursive: true, force: true })
+    removeTree(material)
     throw error
   }
 }

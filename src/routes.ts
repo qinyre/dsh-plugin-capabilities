@@ -11,6 +11,7 @@ import { addGitRepo, addLocalRepo, rootExists } from './repos.ts'
 import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest } from './restart.ts'
 import { deleteSkill, setSkillPolicy, updateSkillFile, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
+import { removeTree } from './rmtree.ts'
 import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
 import type { CapabilitiesHost, HostSkill } from './types.ts'
 
@@ -354,12 +355,17 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             sendJson(response, 400, { error: 'id is required' })
             return
           }
-          const ok = removeSkillRoot(body.id)
-          if (!ok) {
+          const removed = removeSkillRoot(body.id)
+          if (removed === undefined) {
             sendJson(response, 404, { error: 'repository not found' })
             return
           }
+          // Unwatch before unlink: the provider's directory watchers hold
+          // handles on the material tree, and removing a watched tree on
+          // Windows fails with EPERM (the state is already saved by then,
+          // which is why the repo still disappears despite the error).
           await config.remountProvider()
+          if (removed.materialDir !== undefined) removeTree(removed.materialDir)
           sendJson(response, 200, { ok: true })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })

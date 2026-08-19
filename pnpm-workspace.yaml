@@ -1,0 +1,3 @@
+# esbuild 的 postinstall 只负责放置平台二进制，允许执行
+allowBuilds:
+  esbuild: true

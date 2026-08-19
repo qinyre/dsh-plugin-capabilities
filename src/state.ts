@@ -5,7 +5,7 @@
  * off this file, so it stays small, JSON, and hand-recoverable.
  */
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { randomBytes } from 'node:crypto'
@@ -90,17 +90,21 @@ export function addSkillRoot(entry: Omit<SkillRootEntry, 'addedAt'>, dshHome?: s
   return stored
 }
 
-/** Remove one entry by id and delete its material dir. Returns false when absent. */
-export function removeSkillRoot(id: string, dshHome?: string): boolean {
+/**
+ * Deregister one entry by id and persist immediately. The material dir is
+ * deliberately NOT deleted here: the skill provider still watches it, and
+ * removing a watched tree on Windows fails with EPERM even though the
+ * state is already saved. The caller unmounts (remountProvider) first,
+ * then runs removeTree over the returned entry's materialDir. Returns the
+ * removed entry, or undefined when the id is unknown.
+ */
+export function removeSkillRoot(id: string, dshHome?: string): SkillRootEntry | undefined {
   const state = loadState(dshHome)
   const at = state.skillRoots.findIndex(entry => entry.id === id)
-  if (at === -1) return false
+  if (at === -1) return undefined
   const [removed] = state.skillRoots.splice(at, 1)
   saveState(state, dshHome)
-  if (removed.materialDir !== undefined) {
-    rmSync(removed.materialDir, { recursive: true, force: true, maxRetries: 2 })
-  }
-  return true
+  return removed
 }
 
 /** Whether a git URL is already registered (market “installed” state). */

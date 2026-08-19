@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { addSkillRoot, findRootByUrl, loadState, materialDirFor, newEntryId, removeSkillRoot, saveState } from './state.ts'
+import { removeTree } from './rmtree.ts'
 
 const root = mkdtempSync(join(tmpdir(), 'dsh-caps-state-'))
 afterAll(() => rmSync(root, { recursive: true, force: true }))
@@ -23,8 +24,8 @@ describe('state round-trip', () => {
     expect(findRootByUrl('a/b', home)?.id).toBe(entry.id)
     expect(findRootByUrl('other/repo', home)).toBeUndefined()
 
-    expect(removeSkillRoot(entry.id, home)).toBe(true)
-    expect(removeSkillRoot(entry.id, home)).toBe(false)
+    expect(removeSkillRoot(entry.id, home)).toMatchObject({ id: entry.id })
+    expect(removeSkillRoot(entry.id, home)).toBeUndefined()
     expect(loadState(home).skillRoots).toHaveLength(0)
   })
 
@@ -55,7 +56,11 @@ describe('removeSkillRoot with link material', () => {
     symlinkSync(source, join(material, 'skill'), process.platform === 'win32' ? 'junction' : 'dir')
     addSkillRoot({ id, kind: 'local', label: 'keep', path: source, roots: [material], materialDir: material }, home)
 
-    expect(removeSkillRoot(id, home)).toBe(true)
+    // Deregistration only drops the state row; the caller deletes the
+    // material itself once the provider stopped watching it.
+    expect(removeSkillRoot(id, home)).toMatchObject({ id })
+    expect(existsSync(material)).toBe(true)
+    removeTree(material)
     expect(existsSync(material)).toBe(false)
     expect(existsSync(join(source, 'SKILL.md'))).toBe(true)
     // State file persisted without the entry.

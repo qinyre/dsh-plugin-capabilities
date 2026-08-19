@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { addGitRepo, addLocalRepo, detectSkillRoots, parseGitHubSource } from './repos.ts'
 import { loadState, removeSkillRoot } from './state.ts'
+import { removeTree } from './rmtree.ts'
 
 const root = mkdtempSync(join(tmpdir(), 'dsh-caps-repos-'))
 afterAll(() => rmSync(root, { recursive: true, force: true }))
@@ -129,8 +130,10 @@ describe('addLocalRepo', () => {
     expect(children).toHaveLength(1)
     expect(readFileSync(join(entry.roots[0], children[0], 'SKILL.md'), 'utf8')).toContain('solo')
 
-    // Removing the entry deletes the material dir but never the source.
-    expect(removeSkillRoot(entry.id, home)).toBe(true)
+    // Removing the entry deregisters; the caller then deletes the material
+    // dir (the junction wrapper) — never the linked source.
+    expect(removeSkillRoot(entry.id, home)).toMatchObject({ id: entry.id })
+    removeTree(entry.roots[0])
     expect(existsSync(entry.roots[0])).toBe(false)
     expect(existsSync(join(source, 'SKILL.md'))).toBe(true)
   })
