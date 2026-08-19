@@ -40,6 +40,12 @@ declare module '@deepseek-ai/dsh-client-ui-primitives' {
     className?: string | undefined
   }): ReactElement
 
+  /** Untrusted-Markdown renderer over the app's own mdast pipeline. */
+  export function MarkdownText(props: {
+    text: string
+    streaming?: boolean | undefined
+  }): ReactElement
+
   export function IconRefreshOutline14(props: {
     className?: string | undefined
     size?: number | undefined

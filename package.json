@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-capabilities",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Manage skills and MCP servers from the Web UI Settings. 在设置页管理 dsh 的技能与 MCP 服务器。",
   "type": "module",
   "main": "lib/index.js",

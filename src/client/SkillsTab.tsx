@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
-import { Button, IconRefreshOutline14, IconSkillOutline16, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconRefreshOutline14, IconSkillOutline16, MarkdownText, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import { CSS } from './css.ts'
 import type { OpenTarget, Translate } from './index.ts'
 import type { RootRowView } from './MarketTab.tsx'
@@ -77,6 +77,8 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
   const { t, injected } = props
   const [skills, setSkills] = useState<SkillRowView[] | null>(null)
   const [editor, setEditor] = useState<EditorState | null>(null)
+  /** Content pane of the editor modal: rendered Markdown vs the raw editor. */
+  const [preview, setPreview] = useState(false)
   const [confirmName, setConfirmName] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null)
@@ -106,6 +108,7 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
 
   const openCreate = (): void => {
     setFormError(null)
+    setPreview(false)
     setEditor({ mode: 'create', name: '', description: '', whenToUse: '', modelInvocable: true, userInvocable: true, content: '' })
   }
 
@@ -114,6 +117,9 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
     setFormError(null)
     try {
       const body = await injected.get(skill.name)
+      // Read-only sources open on the rendered preview; editable ones on the
+      // plain-text editor. The toggle in the content row flips either way.
+      setPreview(!skill.editable)
       setEditor({
         mode: skill.editable ? 'edit' : 'view',
         name: skill.name,
@@ -485,15 +491,32 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
                 {t('userInvocable')}
               </label>
             </div>
-            <label className="dpc-label">
-              <span>{t('skillContent')}</span>
-              <textarea
-                className="dpc-textarea"
-                value={editor.content}
-                readOnly={readOnly}
-                onChange={(event) => setEditor({ ...editor, content: event.target.value })}
-              />
-            </label>
+            <div className="dpc-label">
+              <div className="dpc-cardRow">
+                <span>{t('skillContent')}</span>
+                <span className="dpc-spacer" />
+                <div className="dpc-segments" role="tablist" aria-label={t('skillContent')}>
+                  <button type="button" role="tab" aria-selected={preview} className="dpc-segment" data-active={preview ? 'true' : undefined} onClick={() => setPreview(true)}>
+                    {t('skillPreview')}
+                  </button>
+                  <button type="button" role="tab" aria-selected={!preview} className="dpc-segment" data-active={!preview ? 'true' : undefined} onClick={() => setPreview(false)}>
+                    {readOnly ? t('skillPlainText') : t('edit')}
+                  </button>
+                </div>
+              </div>
+              {preview
+                ? (typeof MarkdownText === 'function'
+                    ? <div className="dpc-mdPreview"><MarkdownText text={editor.content} /></div>
+                    : <textarea className="dpc-textarea" value={editor.content} readOnly />)
+                : (
+                  <textarea
+                    className="dpc-textarea"
+                    value={editor.content}
+                    readOnly={readOnly}
+                    onChange={(event) => setEditor({ ...editor, content: event.target.value })}
+                  />
+                )}
+            </div>
             {formError !== null && <p className="dpc-formError">{formError}</p>}
             <div className="dpc-cardRow">
               <span className="dpc-spacer" />
