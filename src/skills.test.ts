@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync, mkdirSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { deleteSkill, serializeSkill, setSkillPolicy, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
+import { deleteSkill, serializeSkill, setSkillPolicy, updateSkillFile, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 
 const root = mkdtempSync(join(tmpdir(), 'dsh-caps-skills-'))
 afterAll(() => rmSync(root, { recursive: true, force: true }))
@@ -57,6 +57,29 @@ describe('writeSkill / deleteSkill', () => {
     expect(deleteSkill('my-skill', root)).toBe(true)
     expect(existsSync(join(root, 'skills', 'my-skill'))).toBe(false)
     expect(deleteSkill('my-skill', root)).toBe(false)
+  })
+
+  it('updateSkillFile edits in place, preserving keys the editor does not own', () => {
+    const dir = join(root, 'keep-skill')
+    mkdirSync(dir, { recursive: true })
+    const file = join(dir, 'SKILL.md')
+    writeFileSync(file, '---\nname: keep-skill\nlicense: MIT\nallowed-tools: Bash\ndescription: "old one"\n---\n\n# Old\n')
+    updateSkillFile(file, {
+      name: 'keep-skill',
+      description: 'new one',
+      whenToUse: undefined,
+      modelInvocable: false,
+      userInvocable: true,
+      content: '# New body',
+    })
+    const after = readFileSync(file, 'utf8')
+    expect(after).toContain('license: MIT')
+    expect(after).toContain('allowed-tools: Bash')
+    expect(after).toContain('description: "new one"')
+    expect(after).toContain('disable-model-invocation: true')
+    expect(after).not.toContain('user-invocable')
+    expect(after).toContain('# New body')
+    expect(after).not.toContain('# Old')
   })
   it('never touches sibling directories on delete', () => {
     mkdirSync(join(root, 'skills', 'other'), { recursive: true })

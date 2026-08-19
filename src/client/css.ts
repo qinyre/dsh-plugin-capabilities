@@ -62,6 +62,21 @@ export const CSS = `
 .dpc-modalForm.dpc-modalForm{width:min(760px,100%)}
 .dpc-modalScroll.dpc-modalScroll{max-height:calc(100vh - 160px);overflow-y:auto}
 .dpc-mdPreview{min-height:320px;max-height:60vh;overflow-y:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px 12px;background:var(--dsw-alias-bg-layer-1);font-size:13px}
+/* Rendered-markdown body (bundled marked + DOMPurify). */
+.dpc-mdBody h1,.dpc-mdBody h2,.dpc-mdBody h3,.dpc-mdBody h4{margin:14px 0 6px;color:var(--dsw-alias-label-primary);line-height:1.4}
+.dpc-mdBody h1{font-size:18px}.dpc-mdBody h2{font-size:16px}.dpc-mdBody h3{font-size:14px}.dpc-mdBody h4{font-size:13px}
+.dpc-mdBody p{margin:6px 0;line-height:20px}
+.dpc-mdBody ul,.dpc-mdBody ol{margin:6px 0;padding-left:20px}
+.dpc-mdBody li{margin:2px 0;line-height:19px}
+.dpc-mdBody code{font-family:var(--ds-font-family-code);font-size:12px;background:var(--dsw-alias-bg-layer-3);border-radius:4px;padding:1px 5px}
+.dpc-mdBody pre{margin:8px 0;padding:10px 12px;overflow-x:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-3)}
+.dpc-mdBody pre code{padding:0;background:transparent;font-size:12px;line-height:18px}
+.dpc-mdBody a{color:var(--dsw-alias-state-business-primary)}
+.dpc-mdBody blockquote{margin:8px 0;padding:2px 12px;border-left:3px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary)}
+.dpc-mdBody table{border-collapse:collapse;margin:8px 0}
+.dpc-mdBody th,.dpc-mdBody td{border:1px solid var(--dsw-alias-border-l2);padding:4px 10px;font-size:12px;line-height:18px}
+.dpc-mdBody hr{border:0;border-top:1px solid var(--dsw-alias-border-l2);margin:12px 0}
+.dpc-mdBody>*:first-child{margin-top:0}
 .dpc-importScroll{display:flex;flex-direction:column;gap:14px;max-height:min(400px,52vh);overflow-y:auto;padding:2px 4px 2px 2px}
 .dpc-importGroup{display:flex;flex-direction:column;gap:8px}
 .dpc-importHead{display:flex;align-items:center;gap:8px;padding:0 2px}

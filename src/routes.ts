@@ -2,26 +2,51 @@
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { mkdirSync } from 'node:fs'
+import { join, sep } from 'node:path'
 import { scanAllMcp } from './agents.ts'
 import { readJsonBody, sameOrigin, sendJson } from './http.ts'
 import { loadMarketIndex, type MarketMcpServer } from './market.ts'
 import { openDirectory } from './opener.ts'
 import { addGitRepo, addLocalRepo, rootExists } from './repos.ts'
 import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest } from './restart.ts'
-import { deleteSkill, setSkillPolicy, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
+import { deleteSkill, setSkillPolicy, updateSkillFile, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
 import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
 import type { CapabilitiesHost, HostSkill } from './types.ts'
 
-/** Only this source is writable from the Settings page (provider rank 400). */
-const EDITABLE_SOURCE = 'user-dsh'
+/**
+ * A 'custom' skill is writable only when its folder sits inside a root this
+ * plugin manages: the materialized repositories under the plugin state dir,
+ * or a registered local root. Vendored skills shipped inside the plugin
+ * package (under node_modules) are custom-sourced too but stay read-only —
+ * edits there would die with the next plugin update.
+ */
+function customSkillWritable(dir: string, dshHome: string | undefined): boolean {
+  const state = pluginStateDir(dshHome)
+  if (dir === state || dir.startsWith(state + sep)) return true
+  return loadState(dshHome).skillRoots.some(entry =>
+    entry.roots.some(root => dir === root || dir.startsWith(root + sep)))
+}
+
+/** Whether the save route may write this catalog row back to disk. */
+function skillWritable(skill: HostSkill, dir: string | undefined, dshHome: string | undefined): boolean {
+  if (dir === undefined) return false
+  if (skill.source === 'user-dsh') return true
+  return skill.source === 'custom' && customSkillWritable(dir, dshHome)
+}
 
 /** One catalog skill as the browser sees it (editable/dir flags added). */
-type SkillRow = HostSkill & { editable: boolean; dir?: string; policyEditable: boolean }
+type SkillRow = HostSkill & { editable: boolean; removable: boolean; dir?: string; policyEditable: boolean }
 
-function toSkillRow(skill: HostSkill): SkillRow {
+function toSkillRow(skill: HostSkill, dshHome: string | undefined): SkillRow {
   const dir = skill.resourceBase?.kind === 'directory' ? skill.resourceBase.path : undefined
-  return { ...skill, editable: skill.source === EDITABLE_SOURCE, ...(dir !== undefined ? { dir } : {}), policyEditable: dir !== undefined }
+  return {
+    ...skill,
+    editable: skillWritable(skill, dir, dshHome),
+    removable: skill.source === 'user-dsh',
+    ...(dir !== undefined ? { dir } : {}),
+    policyEditable: dir !== undefined,
+  }
 }
 
 /** One registered repository plus a liveness flag (roots can go stale). */
@@ -49,7 +74,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
         }
         try {
           const skills = await host.skills.list()
-          sendJson(response, 200, { skills: skills.map(toSkillRow) })
+          sendJson(response, 200, { skills: skills.map(skill => toSkillRow(skill, process.env.DSH_HOME)) })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -108,7 +133,22 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             sendJson(response, 400, { error: invalid })
             return
           }
-          writeSkill(input)
+          // An existing skill edits in place (its own folder, whichever
+          // editable source it comes from — preserving frontmatter keys the
+          // editor does not own); a new name creates in the user root. The
+          // file location is resolved server-side from the catalog, never
+          // taken from the request.
+          const existing = (await host.skills.list()).find(skill => skill.name === input.name)
+          if (existing !== undefined) {
+            const dir = existing.resourceBase?.kind === 'directory' ? existing.resourceBase.path : undefined
+            if (!skillWritable(existing, dir, process.env.DSH_HOME)) {
+              sendJson(response, 403, { error: `skills from source '${existing.source}' are read-only` })
+              return
+            }
+            updateSkillFile(join(dir as string, 'SKILL.md'), input)
+          } else {
+            writeSkill(input)
+          }
           sendJson(response, 200, { ok: true, name: input.name })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })

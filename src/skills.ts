@@ -100,3 +100,26 @@ export function setSkillPolicy(file: string, enabled: boolean): void {
   if (!enabled) kept.push('disable-model-invocation: true', 'user-invocable: false')
   writeFileSync(file, `---${newline}${kept.join(newline)}${newline}---${body}`, 'utf8')
 }
+
+/**
+ * Edit an existing skill file in place — for skills that do not live in the
+ * user root (market/custom repositories). Only the keys the editor owns
+ * (name, description, whenToUse, the two invocation flags) are rewritten;
+ * every other frontmatter key — license, allowed-tools, anything a
+ * repository ships — survives in order, like setSkillPolicy. The body is
+ * replaced by the editor's content.
+ */
+export function updateSkillFile(file: string, input: SkillInput): void {
+  const text = readFileSync(file, 'utf8')
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)
+  if (match === null) throw new Error('skill file has no frontmatter block')
+  const newline = text.includes('\r\n---') ? '\r\n' : '\n'
+  const lines = match[1].split(/\r?\n/)
+  const kept = lines.filter(line => !/^(name|description|whenToUse|disable-model-invocation|user-invocable):/.test(line))
+  const head = [`name: ${input.name}`, `description: ${quote(input.description)}`]
+  if (input.whenToUse !== undefined && input.whenToUse !== '') head.push(`whenToUse: ${quote(input.whenToUse)}`)
+  if (!input.modelInvocable) kept.push('disable-model-invocation: true')
+  if (!input.userInvocable) kept.push('user-invocable: false')
+  const body = input.content.replace(/\r\n/g, '\n').trim()
+  writeFileSync(file, `---${newline}${[...head, ...kept].join(newline)}${newline}---${newline}${newline}${body}${newline}`, 'utf8')
+}

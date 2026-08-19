@@ -158,7 +158,7 @@ describe.skipIf(process.env.DSH_DESKTOP_PLUGIN_SMOKE !== '1' || !guard || !nodeO
     // skill enters the catalog under source "custom".
     const repoDir = join(smokeRoot, 'my-repo')
     mkdirSync(join(repoDir, 'repo-skill'), { recursive: true })
-    writeFileSync(join(repoDir, 'repo-skill', 'SKILL.md'), '---\nname: repo-skill\ndescription: from a local repo\n---\n\nhi')
+    writeFileSync(join(repoDir, 'repo-skill', 'SKILL.md'), '---\nname: repo-skill\ndescription: from a local repo\nlicense: MIT\n---\n\nhi')
     const addRoot = await post('/dsh-plugin-capabilities/roots/add', { kind: 'local', path: repoDir })
     expect(addRoot.status).toBe(200)
     expect(readFileSync(join(smokeRoot, 'dsh-plugin-capabilities', 'state.json'), 'utf8')).toContain('my-repo') // roots recorded
@@ -184,6 +184,21 @@ describe.skipIf(process.env.DSH_DESKTOP_PLUGIN_SMOKE !== '1' || !guard || !nodeO
     expect(policySeen).toBe(true)
     const policyRestore = await post('/dsh-plugin-capabilities/skill/policy', { name: 'repo-skill', enabled: true })
     expect(policyRestore.status).toBe(200)
+
+    // 7b. Custom-repo skills edit in place through the save route; the
+    // frontmatter keys the editor does not own (license) survive the write.
+    const edit = await post('/dsh-plugin-capabilities/skill/save', {
+      name: 'repo-skill',
+      description: 'edited in place',
+      modelInvocable: true,
+      userInvocable: true,
+      content: '# Edited\n\nnew body',
+    })
+    expect(edit.status).toBe(200)
+    const editedFile = readFileSync(join(repoDir, 'repo-skill', 'SKILL.md'), 'utf8')
+    expect(editedFile).toContain('license: MIT')
+    expect(editedFile).toContain('description: "edited in place"')
+    expect(editedFile).toContain('# Edited')
 
     // 8. Market: MCP index serves (remote or bundled fallback) and one-click
     // install writes a profile row.

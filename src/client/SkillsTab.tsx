@@ -5,8 +5,9 @@
 
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
-import { Button, IconRefreshOutline14, IconSkillOutline16, MarkdownText, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconRefreshOutline14, IconSkillOutline16, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import { CSS } from './css.ts'
+import { MarkdownPreview } from './MarkdownPreview.tsx'
 import type { OpenTarget, Translate } from './index.ts'
 import type { RootRowView } from './MarketTab.tsx'
 
@@ -19,6 +20,9 @@ export interface SkillRowView {
   source: string
   provider: string
   editable: boolean
+  /** Only user-root skills can be deleted (the delete route removes one
+   * directory under $DSH_HOME/skills); other editable sources just save. */
+  removable: boolean
   /** The skill's folder when it lives on disk (drives open-folder). */
   dir?: string
   /** File-backed skills can be enabled/disabled through the policy route. */
@@ -369,7 +373,7 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
                   <Button variant="ghost" size="sm" disabled={busy} onClick={() => void openExisting(skill)}>
                     {skill.editable ? t('edit') : t('view')}
                   </Button>
-                  {skill.editable && (
+                  {skill.removable && (
                     <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmName(skill.name)}>{t('delete')}</Button>
                   )}
                 </div>
@@ -505,9 +509,7 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
                 </div>
               </div>
               {preview
-                ? (typeof MarkdownText === 'function'
-                    ? <div className="dpc-mdPreview"><MarkdownText text={editor.content} /></div>
-                    : <textarea className="dpc-textarea" value={editor.content} readOnly />)
+                ? <div className="dpc-mdPreview"><MarkdownPreview text={editor.content} /></div>
                 : (
                   <textarea
                     className="dpc-textarea"
