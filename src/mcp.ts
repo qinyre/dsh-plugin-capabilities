@@ -41,11 +41,29 @@ export interface McpRow {
 /** Write request for one server row (id empty = create). */
 export type McpInput = Omit<McpRow, 'disabled'> & { disabled?: boolean }
 
+/**
+ * Refuse to touch a patch file the parser could not fully read. parseDocument
+ * parks syntax errors in doc.errors (it does not throw), and the failure only
+ * resurfaces at String(doc) as the internals-leaking "Document with errors
+ * cannot be stringified". Nothing gets written either way, but the banner must
+ * say what is actually wrong and which file to fix.
+ */
+function assertPatchParses(path: string, doc: Document): void {
+  if (doc.errors.length === 0) return
+  const at = String(doc.errors[0].message).split('\n', 1)[0]
+  const total = doc.errors.length > 1 ? `, +${doc.errors.length - 1} more` : ''
+  throw new Error(
+    `配置文件 ${path} 存在 YAML 语法错误（${at}${total}），未写入任何内容，请修复该文件后重试`
+    + ` / YAML syntax error in the patch file (${at}${total}); nothing was written — fix it and retry`,
+  )
+}
+
 /** Load the profile patch as a YAML document; `[]` for a missing file. */
 function loadPatch(profileDirPath: string): Document {
   const path = join(profileDirPath, 'cordis.patch.yml')
   const text = existsSync(path) ? readFileSync(path, 'utf8') : '[]'
   const doc = parseDocument(text)
+  assertPatchParses(path, doc)
   const contents = doc.contents as YAMLSeq | null
   // The default-empty file parses as a flow `[]`; the patch layer is
   // human-edited block YAML, so flip the flag before anything appends.

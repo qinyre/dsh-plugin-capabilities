@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -131,5 +131,21 @@ describe('profile patch CRUD', () => {
     const text = readFileSync(patch(), 'utf8')
     expect(text).not.toContain('- insert:')
     expect(listMcp(profile)).toHaveLength(0)
+  })
+})
+
+describe('corrupt patch file', () => {
+  it('fails reads and writes with the file path and parser location, writing nothing', () => {
+    // GitHub issue #1: a malformed cordis.patch.yml surfaced as the raw
+    // "Document with errors cannot be stringified" when a write hit String(doc).
+    const brokenDir = join(root, 'profiles', 'broken')
+    mkdirSync(brokenDir, { recursive: true })
+    writeFileSync(join(brokenDir, 'cordis.patch.yml'), 'foo: 1\n  bar: 2\n', 'utf8')
+    const before = readFileSync(join(brokenDir, 'cordis.patch.yml'), 'utf8')
+
+    expect(() => listMcp(brokenDir)).toThrow(/cordis\.patch\.yml/)
+    expect(() => listMcp(brokenDir)).toThrow(/line 1/)
+    expect(() => upsertMcp(brokenDir, stdio)).toThrow(/未写入任何内容/)
+    expect(readFileSync(join(brokenDir, 'cordis.patch.yml'), 'utf8')).toBe(before)
   })
 })
