@@ -32,6 +32,7 @@ export const CSS = `
 .dpc-cardTitle{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:20px;font-weight:600;font-family:var(--ds-font-family-code)}
 .dpc-cardDesc{margin:0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .dpc-cardRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dpc-cardActions{display:flex;align-items:center;gap:6px;row-gap:4px;flex-wrap:wrap;justify-content:flex-end}
 .dpc-tag{display:inline-flex;align-items:center;min-height:20px;border-radius:5px;padding:1px 6px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font-size:11px;line-height:16px;white-space:nowrap}
 .dpc-tag[data-kind='source']{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 10%,transparent);color:var(--dsw-alias-state-business-primary)}
 .dpc-tag[data-kind='off']{background:color-mix(in srgb,var(--dsw-alias-state-warning-primary,var(--dsw-alias-label-tertiary)) 12%,transparent);color:var(--dsw-alias-label-secondary)}

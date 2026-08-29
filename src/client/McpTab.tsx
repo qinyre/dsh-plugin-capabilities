@@ -542,11 +542,10 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
                   </p>
                 )
               })()}
-              <div className="dpc-cardRow">
-                <span className="dpc-spacer" />
+              <div className="dpc-cardActions">
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doCheck(row)}>{t('checkLabel')}</Button>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doCopy(row)}>{t('copyToOther')}</Button>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doToggle(row)}>{t('toggle')}</Button>
+                <Button variant="ghost" size="sm" disabled={busy} title={t('copyToOther')} onClick={() => void doCopy(row)}>{t('copyAction')}</Button>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doToggle(row)}>{row.disabled ? t('enableAction') : t('disableAction')}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => openEdit(row)}>{t('edit')}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmRow(row)}>{t('delete')}</Button>
               </div>
