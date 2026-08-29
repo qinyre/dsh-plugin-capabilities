@@ -94,9 +94,12 @@ export function apply(ctx: CapabilitiesClientContext): void {
     toggle: (id: string, disabled: boolean, scope: McpScope) =>
       post('/dsh-plugin-capabilities/mcp/toggle', { id, disabled, scope }) as Promise<{ ok: boolean }>,
     remove: (id: string, scope: McpScope) => post('/dsh-plugin-capabilities/mcp/remove', { id, scope }) as Promise<{ ok: boolean }>,
+    check: (id: string, scope: McpScope) => post('/dsh-plugin-capabilities/mcp/check', { id, scope }) as Promise<{ ok: boolean; detail?: string }>,
+    copy: (id: string, scope: McpScope, toScope: McpScope) =>
+      post('/dsh-plugin-capabilities/mcp/copy', { id, scope, toScope }) as Promise<{ ok: boolean; id: string }>,
     scanImport: () => fetchJson<{ servers: ImportedServerView[]; existing: string[] }>('/dsh-plugin-capabilities/import/scan'),
-    applyImport: (items: Array<{ agent: string; name: string }>) =>
-      post('/dsh-plugin-capabilities/import/apply', { items }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>,
+    applyImport: (items: Array<{ agent: string; name: string }>, scope: McpScope) =>
+      post('/dsh-plugin-capabilities/import/apply', { items, scope }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>,
     restart: async (): Promise<void> => {
       if (window.dshDesktop !== undefined) {
         window.dshDesktop.restartSidecar?.()

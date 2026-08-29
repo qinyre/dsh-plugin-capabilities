@@ -12,7 +12,7 @@ import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest 
 import { deleteSkill, setSkillPolicy, updateSkillFile, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
 import { removeTree } from './rmtree.ts'
-import { listMcpScoped, mcpScopeDir, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput, type McpScope } from './mcp.ts'
+import { checkMcpRow, listMcp, listMcpScoped, mcpRowToInput, mcpScopeDir, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput, type McpScope } from './mcp.ts'
 import type { CapabilitiesHost, HostSkill } from './types.ts'
 
 /**
@@ -604,6 +604,80 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
         }
       },
     }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/mcp/check',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { id?: unknown; scope?: unknown }
+          if (typeof body.id !== 'string') {
+            sendJson(response, 400, { error: 'id is required' })
+            return
+          }
+          const dir = mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath)
+          const row = listMcp(dir).find(item => item.id === body.id)
+          if (row === undefined) {
+            sendJson(response, 404, { error: 'server row not found' })
+            return
+          }
+          // No host-level timeout override needed: the probe is bounded
+          // (5s) and side-effect-free (PATH reads or a plain GET).
+          sendJson(response, 200, await checkMcpRow(row))
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/mcp/copy',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          const body = (await readJsonBody(request)) as { id?: unknown; scope?: unknown; toScope?: unknown }
+          if (typeof body.id !== 'string') {
+            sendJson(response, 400, { error: 'id is required' })
+            return
+          }
+          const scope = readScope(body.scope)
+          const toScope: McpScope = readScope(body.toScope)
+          const sourceRow = listMcp(mcpScopeDir(scope, config.profileDirPath, config.dshHomePath)).find(item => item.id === body.id)
+          if (sourceRow === undefined) {
+            sendJson(response, 404, { error: 'server row not found' })
+            return
+          }
+          const input = mcpRowToInput(sourceRow)
+          const invalid = validateMcpInput(input)
+          if (invalid !== null) {
+            sendJson(response, 400, { error: invalid })
+            return
+          }
+          const id = upsertMcp(mcpScopeDir(toScope, config.profileDirPath, config.dshHomePath), input)
+          sendJson(response, 200, { ok: true, id, scope: toScope, restartNeeded: true })
+        } catch (error) {
+          sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
     host.webServer.register({
       kind: 'exact',
       path: '/dsh-plugin-capabilities/import/scan',
@@ -640,7 +714,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as { items?: unknown }
+          const body = (await readJsonBody(request)) as { items?: unknown; scope?: unknown }
           const wanted = new Set(
             (Array.isArray(body.items) ? body.items : [])
               .filter((item): item is { agent: string; name: string } =>
@@ -667,7 +741,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
               results.push({ name: server.name, ok: false, error: invalid })
               continue
             }
-            upsertMcp(config.profileDirPath, input)
+            upsertMcp(mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath), input)
             results.push({ name: server.name, ok: true })
           }
           sendJson(response, 200, { ok: results.every(item => item.ok), results, restartNeeded: true })

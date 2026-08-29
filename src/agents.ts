@@ -1,6 +1,7 @@
 /**
  * Foreign-agent config readers: MCP servers from Claude Code (~/.claude.json,
- * ~/.claude/settings.json) and Codex (~/.codex/config.toml). Pure reads of
+ * ~/.claude/settings.json), Codex (~/.codex/config.toml), Cursor
+ * (~/.cursor/mcp.json) and Gemini CLI (~/.gemini/settings.json). Pure reads of
  * well-known paths; anything missing or malformed yields an empty list.
  */
 
@@ -12,7 +13,7 @@ import type { McpTransport } from './mcp.ts'
 
 /** One MCP server discovered in a foreign agent's config. */
 export interface ImportedServer {
-  agent: 'claude-code' | 'codex'
+  agent: 'claude-code' | 'codex' | 'cursor' | 'gemini'
   name: string
   transport: McpTransport
   command?: string
@@ -38,15 +39,15 @@ function stringArray(value: unknown): string[] | undefined {
   return out.length > 0 ? out : undefined
 }
 
-/** Map one Claude mcpServers entry; returns null for unsupported shapes (sse). */
-function mapClaudeEntry(name: string, entry: unknown): ImportedServer | null {
+/** Map one mcpServers entry (Claude / Cursor share the shape); null for unsupported shapes (sse). */
+function mapMcpServersEntry(agent: ImportedServer['agent'], name: string, entry: unknown): ImportedServer | null {
   if (typeof entry !== 'object' || entry === null) return null
   const record = entry as Record<string, unknown>
   const type = typeof record.type === 'string' ? record.type : 'stdio'
   if (type === 'stdio' || (type === 'stdio' && record.command !== undefined)) {
     if (typeof record.command !== 'string' || record.command === '') return null
     return {
-      agent: 'claude-code', name, transport: 'stdio',
+      agent, name, transport: 'stdio',
       command: record.command,
       args: stringArray(record.args),
       env: stringEntries(record.env),
@@ -55,7 +56,7 @@ function mapClaudeEntry(name: string, entry: unknown): ImportedServer | null {
   if (type === 'http' || type === 'streamable-http') {
     if (typeof record.url !== 'string' || record.url === '') return null
     return {
-      agent: 'claude-code', name, transport: 'streamable-http',
+      agent, name, transport: 'streamable-http',
       url: record.url,
       headers: stringEntries(record.headers),
     }
@@ -80,8 +81,58 @@ export function scanClaudeMcp(home: string = homedir()): ImportedServer[] {
   }
   const out: ImportedServer[] = []
   for (const [name, entry] of Object.entries(merged)) {
-    const mapped = mapClaudeEntry(name, entry)
+    const mapped = mapMcpServersEntry('claude-code', name, entry)
     if (mapped !== null) out.push(mapped)
+  }
+  return out
+}
+
+/** MCP servers from Cursor's ~/.cursor/mcp.json (mcpServers, Claude-shaped). */
+export function scanCursorMcp(home: string = homedir()): ImportedServer[] {
+  const file = join(home, '.cursor', 'mcp.json')
+  if (!existsSync(file)) return []
+  let parsed: { mcpServers?: unknown }
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8')) as { mcpServers?: unknown }
+  } catch {
+    return []
+  }
+  if (typeof parsed.mcpServers !== 'object' || parsed.mcpServers === null) return []
+  const out: ImportedServer[] = []
+  for (const [name, entry] of Object.entries(parsed.mcpServers)) {
+    const mapped = mapMcpServersEntry('cursor', name, entry)
+    if (mapped !== null) out.push(mapped)
+  }
+  return out
+}
+
+/** MCP servers from Gemini CLI's ~/.gemini/settings.json (mcpServers; httpUrl
+ *  keys map to streamable-http, plain `url` marks SSE and is skipped). */
+export function scanGeminiMcp(home: string = homedir()): ImportedServer[] {
+  const file = join(home, '.gemini', 'settings.json')
+  if (!existsSync(file)) return []
+  let parsed: { mcpServers?: unknown }
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8')) as { mcpServers?: unknown }
+  } catch {
+    return []
+  }
+  if (typeof parsed.mcpServers !== 'object' || parsed.mcpServers === null) return []
+  const out: ImportedServer[] = []
+  for (const [name, entry] of Object.entries(parsed.mcpServers)) {
+    if (typeof entry !== 'object' || entry === null) continue
+    const record = entry as Record<string, unknown>
+    if (typeof record.command === 'string' && record.command !== '') {
+      out.push({
+        agent: 'gemini', name, transport: 'stdio',
+        command: record.command,
+        args: stringArray(record.args),
+        env: stringEntries(record.env),
+      })
+    } else if (typeof record.httpUrl === 'string' && record.httpUrl !== '') {
+      out.push({ agent: 'gemini', name, transport: 'streamable-http', url: record.httpUrl })
+    }
+    // `url`-only entries are SSE endpoints, which dsh's client cannot speak.
   }
   return out
 }
@@ -119,7 +170,7 @@ export function scanCodexMcp(home: string = homedir()): ImportedServer[] {
 /** All foreign-agent MCP servers, deduplicated by (agent, name). */
 export function scanAllMcp(home: string = homedir()): ImportedServer[] {
   const seen = new Set<string>()
-  return [...scanClaudeMcp(home), ...scanCodexMcp(home)]
+  return [...scanClaudeMcp(home), ...scanCodexMcp(home), ...scanCursorMcp(home), ...scanGeminiMcp(home)]
     .filter(server => {
       const key = `${server.agent}/${server.name}`
       if (seen.has(key)) return false

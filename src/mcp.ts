@@ -343,3 +343,81 @@ export function removeMcp(dirPath: string, id: string): boolean {
   savePatch(dirPath, doc)
   return true
 }
+
+/** Rebuild a create request from an existing row (id emptied; identity fields
+ *  carried over) — used to copy a row into the other patch layer. */
+export function mcpRowToInput(row: McpRow): McpInput {
+  return {
+    id: '',
+    serverName: row.serverName,
+    transport: row.transport,
+    disabled: row.disabled,
+    ...(row.transport === 'stdio'
+      ? {
+          command: row.command,
+          ...(row.args !== undefined ? { args: row.args } : {}),
+          ...(row.env !== undefined ? { env: row.env } : {}),
+          ...(row.cwd !== undefined ? { cwd: row.cwd } : {}),
+        }
+      : {
+          url: row.url,
+          ...(row.headers !== undefined ? { headers: row.headers } : {}),
+        }),
+  }
+}
+
+/**
+ * Whether a stdio command would resolve at spawn time: a bare name is looked
+ * up in the PATH entries (with the Windows executable extensions), anything
+ * with a path separator must exist as given. Pure filesystem reads — no
+ * process is spawned, so no console-window or side-effect concerns.
+ */
+export function resolveCommandOnPath(command: string, pathEnv: string, platform: string = process.platform): boolean {
+  if (command.includes('/') || command.includes('\\')) return existsSync(command)
+  const exts = platform === 'win32' ? ['', '.com', '.exe', '.bat', '.cmd'] : ['']
+  const separator = platform === 'win32' ? ';' : ':'
+  for (const rawDir of pathEnv.split(separator)) {
+    const dir = rawDir.trim().replace(/^"|"$/g, '')
+    if (dir === '') continue
+    for (const ext of exts) {
+      if (existsSync(join(dir, command + ext))) return true
+    }
+  }
+  return false
+}
+
+/** Outcome of a connectivity check, as the browser renders it. */
+export interface McpCheckResult {
+  ok: boolean
+  /** Short technical detail for the hint line ("HTTP 200", "not found on PATH"). */
+  detail?: string
+}
+
+/**
+ * Probe one server row without starting it: stdio rows are validated against
+ * the PATH (a spawn would leave console windows and side effects behind),
+ * streamable-http rows get a short GET — any HTTP status proves reachability,
+ * since MCP endpoints legitimately answer 405 to plain GETs.
+ */
+export async function checkMcpRow(row: McpRow, options: { timeoutMs?: number; pathEnv?: string; platform?: string } = {}): Promise<McpCheckResult> {
+  const pathEnv = options.pathEnv ?? process.env.PATH ?? ''
+  if (row.transport === 'stdio') {
+    const command = row.command ?? ''
+    if (command === '') return { ok: false, detail: 'row has no command' }
+    return resolveCommandOnPath(command, pathEnv, options.platform)
+      ? { ok: true, detail: command }
+      : { ok: false, detail: `${command} not found on PATH` }
+  }
+  if (row.url === undefined || !/^https?:\/\//.test(row.url)) return { ok: false, detail: 'row has no http url' }
+  try {
+    const response = await fetch(row.url, {
+      headers: { accept: 'application/json, text/event-stream' },
+      signal: AbortSignal.timeout(options.timeoutMs ?? 5000),
+    })
+    return { ok: true, detail: `HTTP ${response.status}` }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const cause = (error as { cause?: { code?: unknown } }).cause?.code
+    return { ok: false, detail: cause !== undefined ? String(cause) : message }
+  }
+}

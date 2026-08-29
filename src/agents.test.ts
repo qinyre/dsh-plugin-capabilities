@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { agentSkillRoots, scanAllMcp, scanClaudeMcp, scanCodexMcp } from './agents.ts'
+import { agentSkillRoots, scanAllMcp, scanClaudeMcp, scanCodexMcp, scanCursorMcp, scanGeminiMcp } from './agents.ts'
 
 const home = mkdtempSync(join(tmpdir(), 'dsh-caps-agents-'))
 afterAll(() => rmSync(home, { recursive: true, force: true }))
@@ -85,6 +85,52 @@ describe('scanCodexMcp', () => {
     expect(scanCodexMcp(join(home, 'empty'))).toEqual([])
     writeFileSync(join(home, '.codex', 'config.toml'), 'not [ valid toml')
     expect(scanCodexMcp(home)).toEqual([])
+  })
+})
+
+describe('scanCursorMcp', () => {
+  it('reads ~/.cursor/mcp.json (mcpServers, Claude-shaped; SSE skipped)', () => {
+    mkdirSync(join(home, '.cursor'), { recursive: true })
+    writeFileSync(join(home, '.cursor', 'mcp.json'), JSON.stringify({
+      mcpServers: {
+        context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
+        'web-remote': { type: 'http', url: 'https://example.com/mcp' },
+        'legacy-sse': { type: 'sse', url: 'https://example.com/sse' },
+      },
+    }))
+    const servers = scanCursorMcp(home)
+    expect(servers).toHaveLength(2)
+    expect(servers.find(server => server.name === 'context7')).toMatchObject({ agent: 'cursor', transport: 'stdio', command: 'npx' })
+    expect(servers.find(server => server.name === 'web-remote')).toMatchObject({ agent: 'cursor', transport: 'streamable-http', url: 'https://example.com/mcp' })
+    expect(servers.find(server => server.name === 'legacy-sse')).toBeUndefined()
+  })
+  it('returns empty for missing or malformed files', () => {
+    expect(scanCursorMcp(join(home, 'empty'))).toEqual([])
+    writeFileSync(join(home, '.cursor', 'mcp.json'), '{ broken json')
+    expect(scanCursorMcp(home)).toEqual([])
+  })
+})
+
+describe('scanGeminiMcp', () => {
+  it('maps command entries and httpUrl, skips SSE url entries', () => {
+    mkdirSync(join(home, '.gemini'), { recursive: true })
+    writeFileSync(join(home, '.gemini', 'settings.json'), JSON.stringify({
+      mcpServers: {
+        context7: { command: 'npx', args: ['-y', '@upstash/context7-mcp'], env: { A: 'b' } },
+        remote: { httpUrl: 'https://example.com/mcp' },
+        sseOnly: { url: 'https://example.com/sse' },
+      },
+    }))
+    const servers = scanGeminiMcp(home)
+    expect(servers).toHaveLength(2)
+    expect(servers.find(server => server.name === 'context7')).toMatchObject({ agent: 'gemini', transport: 'stdio', command: 'npx' })
+    expect(servers.find(server => server.name === 'remote')).toMatchObject({ agent: 'gemini', transport: 'streamable-http', url: 'https://example.com/mcp' })
+    expect(servers.find(server => server.name === 'sseOnly')).toBeUndefined()
+  })
+  it('returns empty for missing or malformed files', () => {
+    expect(scanGeminiMcp(join(home, 'empty'))).toEqual([])
+    writeFileSync(join(home, '.gemini', 'settings.json'), '{ broken json')
+    expect(scanGeminiMcp(home)).toEqual([])
   })
 })
 

@@ -33,8 +33,10 @@ export interface McpInjected {
   save(input: Record<string, unknown>): Promise<{ ok: boolean; id: string }>
   toggle(id: string, disabled: boolean, scope: McpScope): Promise<{ ok: boolean }>
   remove(id: string, scope: McpScope): Promise<{ ok: boolean }>
+  check(id: string, scope: McpScope): Promise<{ ok: boolean; detail?: string }>
+  copy(id: string, scope: McpScope, toScope: McpScope): Promise<{ ok: boolean; id: string }>
   scanImport(): Promise<{ servers: ImportedServerView[]; existing: string[] }>
-  applyImport(items: Array<{ agent: string; name: string }>): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>
+  applyImport(items: Array<{ agent: string; name: string }>, scope: McpScope): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>
   restart(): Promise<void>
   desktop: boolean
 }
@@ -59,8 +61,13 @@ type ImportItem = { server: ImportedServerView; existing: boolean; checked: bool
 
 /** Group import candidates by source agent, known agents first. */
 export function importGroups(items: ImportItem[]): Array<{ agent: string; label: string; items: Array<{ item: ImportItem; index: number }> }> {
-  const label = (agent: string) => agent === 'claude-code' ? 'Claude Code' : agent === 'codex' ? 'Codex' : agent
-  const order = ['claude-code', 'codex']
+  const label = (agent: string) =>
+    agent === 'claude-code' ? 'Claude Code'
+    : agent === 'codex' ? 'Codex'
+    : agent === 'cursor' ? 'Cursor'
+    : agent === 'gemini' ? 'Gemini CLI'
+    : agent
+  const order = ['claude-code', 'codex', 'cursor', 'gemini']
   const agents = [...new Set(items.map(item => item.server.agent))]
     .sort((a, b) => {
       const rank = (agent: string) => { const at = order.indexOf(agent); return at === -1 ? order.length : at }
@@ -230,6 +237,9 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const [reload, setReload] = useState(0)
   const [pasteJson, setPasteJson] = useState('')
   const [pasteError, setPasteError] = useState<string | null>(null)
+  /** Connectivity probes keyed by `${scope}/${id}`; absent = never checked. */
+  const [checks, setChecks] = useState<Record<string, { ok: boolean; detail?: string } | 'busy'>>({})
+  const [importScope, setImportScope] = useState<McpScope>('profile')
 
   const openImport = async (): Promise<void> => {
     setImportOpen(true)
@@ -253,7 +263,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     const items = importItems.filter(item => item.checked && !item.existing).map(item => ({ agent: item.server.agent, name: item.server.name }))
     setBusy(true)
     try {
-      const body = await injected.applyImport(items)
+      const body = await injected.applyImport(items, importScope)
       const failed = body.results.filter(item => !item.ok)
       setOutcome(failed.length === 0
         ? { ok: true, text: t('restartNeeded') }
@@ -403,6 +413,33 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     }
   }
 
+  /** Probe one row (PATH lookup for stdio, short GET for http); result kept per row. */
+  const doCheck = async (row: McpRow): Promise<void> => {
+    const key = `${row.scope}/${row.id}`
+    setChecks(current => ({ ...current, [key]: 'busy' }))
+    try {
+      const result = await injected.check(row.id, row.scope)
+      setChecks(current => ({ ...current, [key]: result }))
+    } catch (error) {
+      setChecks(current => ({ ...current, [key]: { ok: false, detail: String(error instanceof Error ? error.message : error) } }))
+    }
+  }
+
+  /** Duplicate the row into the other patch layer (ids dedupe server-side). */
+  const doCopy = async (row: McpRow): Promise<void> => {
+    setBusy(true)
+    try {
+      const toScope: McpScope = row.scope === 'global' ? 'profile' : 'global'
+      await injected.copy(row.id, row.scope, toScope)
+      setOutcome({ ok: true, text: t('restartNeeded') })
+      reloadList(true)
+    } catch (error) {
+      setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const doRestart = (): void => {
     setRestartConfirm(false)
     setRestarting(true)
@@ -494,8 +531,21 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
                 {row.transport === 'stdio' ? `${row.command ?? ''} ${(row.args ?? []).join(' ')}` : row.url ?? ''}
               </p>
               {row.shadowed === true && <p className="dpc-formError">{t('shadowedByGlobal')}</p>}
+              {(() => {
+                const check = checks[`${row.scope}/${row.id}`]
+                if (check === undefined) return null
+                if (check === 'busy') return <p className="dpc-cardDesc">{t('checkRunning')}</p>
+                return (
+                  <p className={check.ok ? 'dpc-cardDesc' : 'dpc-formError'}>
+                    {check.ok ? `✓ ${t('checkOk')}` : `✗ ${t('checkFail')}`}
+                    {check.detail !== undefined && ` · ${check.detail}`}
+                  </p>
+                )
+              })()}
               <div className="dpc-cardRow">
                 <span className="dpc-spacer" />
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doCheck(row)}>{t('checkLabel')}</Button>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doCopy(row)}>{t('copyToOther')}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doToggle(row)}>{t('toggle')}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => openEdit(row)}>{t('edit')}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmRow(row)}>{t('delete')}</Button>
@@ -658,6 +708,21 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
       >
         <div className="dpc-form">
           <p className="dpc-intro" style={{ margin: 0 }}>{t('importIntro')}</p>
+          <div className="dpc-cardRow">
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span>{t('scopeLabel')}</span>
+              <select
+                className="dpc-select"
+                style={{ width: 'auto' }}
+                value={importScope}
+                disabled={busy}
+                onChange={(event) => setImportScope(event.target.value as McpScope)}
+              >
+                <option value="profile">{t('scopeProfile')}</option>
+                <option value="global">{t('scopeGlobal')}</option>
+              </select>
+            </label>
+          </div>
           {importItems === null && <p className="dpc-empty">{t('loading')}</p>}
           {importItems !== null && importItems.length === 0 && <p className="dpc-empty">{t('importEmpty')}</p>}
           {importItems !== null && importItems.length > 0 && (

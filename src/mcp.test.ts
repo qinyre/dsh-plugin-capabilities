@@ -2,12 +2,15 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { listMcp, listMcpScoped, mcpScopeDir, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
+import { checkMcpRow, listMcp, listMcpScoped, mcpRowToInput, mcpScopeDir, removeMcp, resolveCommandOnPath, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
 
 const root = mkdtempSync(join(tmpdir(), 'dsh-caps-mcp-'))
 const profile = join(root, 'profiles', 'web')
 const home = join(root, 'home')
-afterAll(() => rmSync(root, { recursive: true, force: true }))
+afterAll(() => {
+  rmSync(root, { recursive: true, force: true })
+  rmSync('dsh-caps-path-bin', { recursive: true, force: true })
+})
 
 const patch = () => join(profile, 'cordis.patch.yml')
 
@@ -213,4 +216,69 @@ describe('global patch layer (GitHub issue #2)', () => {
     expect(listMcp(home)).toHaveLength(0)
     expect(listMcp(profile).some(row => row.serverName === 'shared-tools')).toBe(false)
   })
+})
+
+describe('mcpRowToInput', () => {
+  it('rebuilds a create request carrying identity fields but not the id', () => {
+    const rows = listMcp(profile)
+    const source = rows[0]
+    const input = mcpRowToInput(source)
+    expect(input.id).toBe('')
+    expect(input.serverName).toBe(source.serverName)
+    expect(input.transport).toBe(source.transport)
+    expect(input.command).toBe(source.command)
+    expect(input.args).toEqual(source.args)
+    expect(input.env).toEqual(source.env)
+    expect(validateMcpInput(input)).toBeNull()
+  })
+})
+
+describe('command resolution + connectivity check', () => {
+  it('resolves bare commands across PATH entries, honoring Windows extensions and quotes', () => {
+    const bin = join(root, 'bin')
+    mkdirSync(bin, { recursive: true })
+    writeFileSync(join(bin, 'tool.cmd'), '@echo off\r\n')
+    writeFileSync(join(bin, 'plain'), '#!/bin/sh\n')
+
+    expect(resolveCommandOnPath('tool', `"${bin}"`, 'win32')).toBe(true)
+    expect(resolveCommandOnPath('tool', bin, 'win32')).toBe(true)
+    expect(resolveCommandOnPath('tool', bin, 'linux')).toBe(false)
+    expect(resolveCommandOnPath('plain', bin, 'win32')).toBe(true)
+    expect(resolveCommandOnPath('missing-thing', bin, 'win32')).toBe(false)
+    expect(resolveCommandOnPath('missing-thing', `${bin};`, 'win32')).toBe(false)
+    expect(resolveCommandOnPath(join(bin, 'tool.cmd'), '', 'win32')).toBe(true)
+    expect(resolveCommandOnPath(join(bin, 'nope'), '', 'win32')).toBe(false)
+
+    // The POSIX branch splits on ':'; a Windows temp path carries a drive
+    // letter, so exercise it through a colon-free relative entry instead.
+    mkdirSync('dsh-caps-path-bin', { recursive: true })
+    writeFileSync(join('dsh-caps-path-bin', 'plain'), '#!/bin/sh\n')
+    expect(resolveCommandOnPath('plain', 'dsh-caps-path-bin:/elsewhere', 'linux')).toBe(true)
+    expect(resolveCommandOnPath('tool', 'dsh-caps-path-bin:/elsewhere', 'linux')).toBe(false)
+  })
+
+  it('checks stdio rows against PATH without spawning anything', async () => {
+    const base = { id: 'mcp-x', serverName: 'x', disabled: false, scope: 'profile' as const }
+    const missing = await checkMcpRow({ ...base, transport: 'stdio', command: 'definitely-not-a-real-cmd-xyz' }, { pathEnv: '' })
+    expect(missing.ok).toBe(false)
+    expect(missing.detail).toContain('not found on PATH')
+
+    const bin = join(root, 'bin')
+    const found = await checkMcpRow({ ...base, transport: 'stdio', command: 'tool' }, { pathEnv: bin, platform: 'win32' })
+    expect(found.ok).toBe(true)
+
+    const empty = await checkMcpRow({ ...base, transport: 'stdio' }, {})
+    expect(empty.ok).toBe(false)
+  })
+
+  it('checks http rows with a bounded GET; refusal reads as unreachable', async () => {
+    const base = { id: 'mcp-y', serverName: 'y', disabled: false, scope: 'profile' as const }
+    // Port 1 has no listener: the connect fails fast (ECONNREFUSED), which is
+    // exactly the signal the check exists to surface.
+    const refused = await checkMcpRow({ ...base, transport: 'streamable-http', url: 'http://127.0.0.1:1/mcp' }, { timeoutMs: 1500 })
+    expect(refused.ok).toBe(false)
+
+    const broken = await checkMcpRow({ ...base, transport: 'streamable-http' }, {})
+    expect(broken.ok).toBe(false)
+  }, 10_000)
 })
