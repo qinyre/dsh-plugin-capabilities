@@ -11,7 +11,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { agentSkillRoots } from './agents.ts'
-import { argvProfile, profileDir } from './profile.ts'
+import { argvProfile, dshHomeDir, profileDir } from './profile.ts'
 import { mountCapabilitiesRoutes } from './routes.ts'
 import { loadState } from './state.ts'
 import type { CapabilitiesHost } from './types.ts'
@@ -102,6 +102,7 @@ export function apply(ctx: Context, config?: Config): void {
       ctx.effect(
         () => mountCapabilitiesRoutes(hostCtx as unknown as CapabilitiesHost, {
           profileDirPath: profileDir(profile),
+          dshHomePath: dshHomeDir(),
           remountProvider,
         }),
         'dsh-plugin-capabilities: http routes',

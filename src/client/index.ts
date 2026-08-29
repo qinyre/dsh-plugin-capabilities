@@ -4,7 +4,7 @@
 
 import { createElement as h } from 'react'
 import { CapabilitiesSection } from './CapabilitiesSection.tsx'
-import type { McpInjected, McpRow } from './McpTab.tsx'
+import type { McpInjected, McpRow, McpScope } from './McpTab.tsx'
 import type { MarketInjected, RootRowView } from './MarketTab.tsx'
 import type { SkillsInjected, SkillRowView } from './SkillsTab.tsx'
 import { zh, en } from './locales.ts'
@@ -89,10 +89,11 @@ export function apply(ctx: CapabilitiesClientContext): void {
   }
 
   const mcpInjected: McpInjected = {
-    list: () => fetchJson<{ servers: McpRow[] }>('/dsh-plugin-capabilities/mcp'),
+    list: () => fetchJson<{ servers: McpRow[]; globalError?: string }>('/dsh-plugin-capabilities/mcp'),
     save: (input: unknown) => post('/dsh-plugin-capabilities/mcp/save', input) as Promise<{ ok: boolean; id: string }>,
-    toggle: (id: string, disabled: boolean) => post('/dsh-plugin-capabilities/mcp/toggle', { id, disabled }) as Promise<{ ok: boolean }>,
-    remove: (id: string) => post('/dsh-plugin-capabilities/mcp/remove', { id }) as Promise<{ ok: boolean }>,
+    toggle: (id: string, disabled: boolean, scope: McpScope) =>
+      post('/dsh-plugin-capabilities/mcp/toggle', { id, disabled, scope }) as Promise<{ ok: boolean }>,
+    remove: (id: string, scope: McpScope) => post('/dsh-plugin-capabilities/mcp/remove', { id, scope }) as Promise<{ ok: boolean }>,
     scanImport: () => fetchJson<{ servers: ImportedServerView[]; existing: string[] }>('/dsh-plugin-capabilities/import/scan'),
     applyImport: (items: Array<{ agent: string; name: string }>) =>
       post('/dsh-plugin-capabilities/import/apply', { items }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>,

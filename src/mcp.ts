@@ -10,6 +10,12 @@
  * list. Managed rows therefore always sit inside one insert entry, and any
  * legacy bare rows (written before this contract was understood) are
  * absorbed into it on the next write.
+ *
+ * Rows live in one of two patch layers: the profile's own
+ * `cordis.patch.yml`, or the machine-wide `$DSH_HOME/cordis.patch.yml`
+ * (dsh composes it over every profile, after the profile layer — a home row
+ * with the same id wins). The primitives below address one layer via the
+ * directory holding its `cordis.patch.yml`; `listMcpScoped` merges both.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -24,6 +30,9 @@ export const SERVER_NAME_RE = /^[A-Za-z0-9_-]{1,32}$/
 /** Transport choices the client supports. */
 export type McpTransport = 'stdio' | 'streamable-http'
 
+/** Which patch layer a row lives in. */
+export type McpScope = 'global' | 'profile'
+
 /** One managed row, as shown to the browser. */
 export interface McpRow {
   id: string
@@ -36,6 +45,20 @@ export interface McpRow {
   cwd?: string
   url?: string
   headers?: Record<string, string>
+}
+
+/** One row tagged with its layer. */
+export interface McpRowView extends McpRow {
+  scope: McpScope
+  /** Profile rows only: a global row with the same id composes after this one and wins. */
+  shadowed?: boolean
+}
+
+/** Merged listing across both patch layers. */
+export interface McpListResult {
+  servers: McpRowView[]
+  /** The home layer exists but could not be read; its rows are not shown. */
+  globalError?: string
 }
 
 /** Write request for one server row (id empty = create). */
@@ -58,9 +81,9 @@ function assertPatchParses(path: string, doc: Document): void {
   )
 }
 
-/** Load the profile patch as a YAML document; `[]` for a missing file. */
-function loadPatch(profileDirPath: string): Document {
-  const path = join(profileDirPath, 'cordis.patch.yml')
+/** Load one layer's patch (`<dirPath>/cordis.patch.yml`) as a YAML document; `[]` for a missing file. */
+function loadPatch(dirPath: string): Document {
+  const path = join(dirPath, 'cordis.patch.yml')
   const text = existsSync(path) ? readFileSync(path, 'utf8') : '[]'
   const doc = parseDocument(text)
   assertPatchParses(path, doc)
@@ -71,9 +94,9 @@ function loadPatch(profileDirPath: string): Document {
   return doc
 }
 
-function savePatch(profileDirPath: string, doc: Document): void {
-  mkdirSync(profileDirPath, { recursive: true })
-  writeFileSync(join(profileDirPath, 'cordis.patch.yml'), String(doc), 'utf8')
+function savePatch(dirPath: string, doc: Document): void {
+  mkdirSync(dirPath, { recursive: true })
+  writeFileSync(join(dirPath, 'cordis.patch.yml'), String(doc), 'utf8')
 }
 
 /** Wrap a plain value into a YAML node (yaml v2 exposes no standalone createNode). */
@@ -183,10 +206,47 @@ function takenIds(doc: Document): Set<string> {
   return taken
 }
 
-/** Read every mcp-client row in the profile layer. */
-export function listMcp(profileDirPath: string): McpRow[] {
-  const doc = loadPatch(profileDirPath)
+/** Read every mcp-client row in one patch layer (`<dirPath>/cordis.patch.yml`). */
+export function listMcp(dirPath: string): McpRow[] {
+  const doc = loadPatch(dirPath)
   return mcpRowItems(doc).map(({ node }) => rowToMcp(doc, node))
+}
+
+/**
+ * Merge both patch layers for the browser: global rows first (dsh composes
+ * them after the profile layer, so they win), profile rows tagged `shadowed`
+ * when a global row claims the same id. A broken home layer must not take
+ * the whole page down — its read failure degrades to `globalError` and the
+ * profile layer still lists (the assertPatchParses message names the file
+ * and the parser location, which is what the banner shows).
+ */
+export function listMcpScoped(profileDirPath: string, dshHomePath: string): McpListResult {
+  let globalRows: McpRow[] = []
+  let globalError: string | undefined
+  if (existsSync(join(dshHomePath, 'cordis.patch.yml'))) {
+    try {
+      globalRows = listMcp(dshHomePath)
+    } catch (error) {
+      globalError = error instanceof Error ? error.message : String(error)
+    }
+  }
+  const globalIds = new Set(globalRows.map(row => row.id).filter(id => id !== ''))
+  return {
+    servers: [
+      ...globalRows.map((row): McpRowView => ({ ...row, scope: 'global' })),
+      ...listMcp(profileDirPath).map((row): McpRowView => ({
+        ...row,
+        scope: 'profile',
+        ...(globalIds.has(row.id) ? { shadowed: true } : {}),
+      })),
+    ],
+    ...(globalError !== undefined ? { globalError } : {}),
+  }
+}
+
+/** Resolve a write target: the layer's directory holding its cordis.patch.yml. */
+export function mcpScopeDir(scope: McpScope, profileDirPath: string, dshHomePath: string): string {
+  return scope === 'global' ? dshHomePath : profileDirPath
 }
 
 /** Validate one write request; returns the rejection reason or null. */
@@ -204,9 +264,9 @@ export function validateMcpInput(input: McpInput): string | null {
 }
 
 /** Add or replace one server row. Returns the (possibly deduplicated) id. */
-export function upsertMcp(profileDirPath: string, input: McpInput): string {
+export function upsertMcp(dirPath: string, input: McpInput): string {
   const inputId = input.id ?? ''
-  const doc = loadPatch(profileDirPath)
+  const doc = loadPatch(dirPath)
   const list = managedInsert(doc)
 
   const existing = inputId !== ''
@@ -248,25 +308,25 @@ export function upsertMcp(profileDirPath: string, input: McpInput): string {
     rowSeq(doc).items.splice(rowSeq(doc).items.indexOf(existing.node), 1, node)
   }
 
-  savePatch(profileDirPath, doc)
+  savePatch(dirPath, doc)
   return id
 }
 
 /** Flip one row's disabled flag (absent = enabled). Returns false when missing. */
-export function setMcpDisabled(profileDirPath: string, id: string, disabled: boolean): boolean {
-  const doc = loadPatch(profileDirPath)
+export function setMcpDisabled(dirPath: string, id: string, disabled: boolean): boolean {
+  const doc = loadPatch(dirPath)
   managedInsert(doc)
   const hit = mcpRowItems(doc).find(({ node }) => String(node.get('id') ?? '') === id)
   if (hit === undefined) return false
   if (disabled) hit.node.set('disabled', true)
   else hit.node.delete('disabled')
-  savePatch(profileDirPath, doc)
+  savePatch(dirPath, doc)
   return true
 }
 
 /** Remove one server row. Returns false when missing. */
-export function removeMcp(profileDirPath: string, id: string): boolean {
-  const doc = loadPatch(profileDirPath)
+export function removeMcp(dirPath: string, id: string): boolean {
+  const doc = loadPatch(dirPath)
   managedInsert(doc)
   const hit = mcpRowItems(doc).find(({ node }) => String(node.get('id') ?? '') === id)
   if (hit === undefined || hit.list === undefined) return false
@@ -280,6 +340,6 @@ export function removeMcp(profileDirPath: string, id: string): boolean {
     seq.items.splice(seq.items.indexOf(owner), 1)
   }
 
-  savePatch(profileDirPath, doc)
+  savePatch(dirPath, doc)
   return true
 }

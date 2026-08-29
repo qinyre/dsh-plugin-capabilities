@@ -1,6 +1,7 @@
-/** Settings → Plugins “MCP” tab: manage the profile's mcp-client rows.
- * Mutations rewrite the profile patch and need a dsh restart — the banner
- * hands the restart to the desktop shell when one is present. */
+/** Settings → Plugins “MCP” tab: manage the mcp-client rows in both patch
+ * layers (profile + global). Mutations rewrite the target patch and need a
+ * dsh restart — the banner hands the restart to the desktop shell when one
+ * is present. */
 
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
@@ -8,11 +9,17 @@ import { Button, IconApiOutline14, IconRefreshOutline14, Modal, StateDot } from 
 import { CSS } from './css.ts'
 import type { ImportedServerView, Translate } from './index.ts'
 
+/** Which patch layer a row lives in. */
+export type McpScope = 'global' | 'profile'
+
 export interface McpRow {
   id: string
   serverName: string
   transport: 'stdio' | 'streamable-http'
   disabled: boolean
+  scope: McpScope
+  /** Profile rows only: a global row with the same id composes after this one and wins. */
+  shadowed?: boolean
   command?: string
   args?: string[]
   env?: Record<string, string>
@@ -22,10 +29,10 @@ export interface McpRow {
 }
 
 export interface McpInjected {
-  list(): Promise<{ servers: McpRow[] }>
+  list(): Promise<{ servers: McpRow[]; globalError?: string }>
   save(input: Record<string, unknown>): Promise<{ ok: boolean; id: string }>
-  toggle(id: string, disabled: boolean): Promise<{ ok: boolean }>
-  remove(id: string): Promise<{ ok: boolean }>
+  toggle(id: string, disabled: boolean, scope: McpScope): Promise<{ ok: boolean }>
+  remove(id: string, scope: McpScope): Promise<{ ok: boolean }>
   scanImport(): Promise<{ servers: ImportedServerView[]; existing: string[] }>
   applyImport(items: Array<{ agent: string; name: string }>): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>
   restart(): Promise<void>
@@ -35,6 +42,8 @@ export interface McpInjected {
 /** Editor dialog state; null when closed. Textareas hold line-based values. */
 interface EditorState {
   id: string
+  /** Fixed after create: a row is edited in the layer that holds it. */
+  scope: McpScope
   serverName: string
   transport: 'stdio' | 'streamable-http'
   command: string
@@ -208,7 +217,8 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const { t, injected } = props
   const [servers, setServers] = useState<McpRow[] | null>(null)
   const [editor, setEditor] = useState<EditorState | null>(null)
-  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [confirmRow, setConfirmRow] = useState<McpRow | null>(null)
+  const [globalError, setGlobalError] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [importItems, setImportItems] = useState<Array<{ server: ImportedServerView; existing: boolean; checked: boolean }> | null>(null)
   const [busy, setBusy] = useState(false)
@@ -266,7 +276,11 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   useEffect(() => {
     let current = true
     void injected.list().then(
-      (body) => { if (current) setServers(body.servers) },
+      (body) => {
+        if (!current) return
+        setServers(body.servers)
+        setGlobalError(body.globalError ?? null)
+      },
       (error: Error) => { if (current) { setServers([]); setOutcome({ ok: false, text: `${t('failed')}: ${String(error.message ?? error)}` }) } },
     )
     return () => { current = false }
@@ -276,7 +290,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     setFormError(null)
     setPasteError(null)
     setPasteJson('')
-    setEditor({ id: '', serverName: '', transport: 'stdio', command: '', args: '', env: '', url: '', headers: '' })
+    setEditor({ id: '', scope: 'profile', serverName: '', transport: 'stdio', command: '', args: '', env: '', url: '', headers: '' })
   }
 
   const openEdit = (row: McpRow): void => {
@@ -285,6 +299,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     setPasteJson('')
     setEditor({
       id: row.id,
+      scope: row.scope,
       serverName: row.serverName,
       transport: row.transport,
       command: row.command ?? '',
@@ -336,6 +351,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     try {
       await injected.save({
         id: editor.id,
+        scope: editor.scope,
         serverName: editor.serverName.trim(),
         transport: editor.transport,
         ...(editor.transport === 'stdio'
@@ -362,7 +378,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const doToggle = async (row: McpRow): Promise<void> => {
     setBusy(true)
     try {
-      await injected.toggle(row.id, !row.disabled)
+      await injected.toggle(row.id, !row.disabled, row.scope)
       setOutcome({ ok: true, text: t('restartNeeded') })
       reloadList(true)
     } catch (error) {
@@ -373,17 +389,17 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   }
 
   const doRemove = async (): Promise<void> => {
-    if (confirmId === null) return
+    if (confirmRow === null) return
     setBusy(true)
     try {
-      await injected.remove(confirmId)
+      await injected.remove(confirmRow.id, confirmRow.scope)
       setOutcome({ ok: true, text: t('restartNeeded') })
       reloadList(true)
     } catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
     } finally {
       setBusy(false)
-      setConfirmId(null)
+      setConfirmRow(null)
     }
   }
 
@@ -442,6 +458,15 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
           <div className="dpc-bannerBody"><span>{outcome.text}</span></div>
         </div>
       )}
+      {globalError !== null && (
+        <div className="dpc-banner" data-kind="error" role="alert">
+          <StateDot state="error" size={10} />
+          <div className="dpc-bannerBody">
+            <span>{t('globalLayerError')}</span>
+            <span className="dpc-bannerHint">{globalError}</span>
+          </div>
+        </div>
+      )}
       {(pending || restarting) && restartBanner}
 
       <div className="dpc-listHead">
@@ -458,20 +483,22 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
       {servers !== null && servers.length > 0 && (
         <ul className="dpc-cards">
           {servers.map((row) => (
-            <li className="dpc-card" key={row.id}>
+            <li className="dpc-card" key={`${row.scope}/${row.id}`}>
               <div className="dpc-cardTop">
                 <strong className="dpc-cardTitle" title={row.id}>{row.serverName}</strong>
+                <span className="dpc-tag" data-kind={row.scope === 'global' ? 'source' : undefined}>{row.scope === 'global' ? t('scopeGlobal') : t('scopeProfile')}</span>
                 <span className="dpc-tag">{row.transport}</span>
                 <span className="dpc-tag" data-kind={row.disabled ? 'off' : undefined}>{row.disabled ? t('disabled') : t('enabled')}</span>
               </div>
               <p className="dpc-cardDesc">
                 {row.transport === 'stdio' ? `${row.command ?? ''} ${(row.args ?? []).join(' ')}` : row.url ?? ''}
               </p>
+              {row.shadowed === true && <p className="dpc-formError">{t('shadowedByGlobal')}</p>}
               <div className="dpc-cardRow">
                 <span className="dpc-spacer" />
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => void doToggle(row)}>{t('toggle')}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => openEdit(row)}>{t('edit')}</Button>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmId(row.id)}>{t('delete')}</Button>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmRow(row)}>{t('delete')}</Button>
               </div>
             </li>
           ))}
@@ -487,6 +514,19 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
       >
         {editor !== null && (
           <div className="dpc-form">
+            <label className="dpc-label">
+              <span>{t('scopeLabel')}</span>
+              <select
+                className="dpc-select"
+                value={editor.scope}
+                disabled={editor.id !== ''}
+                onChange={(event) => setEditor({ ...editor, scope: event.target.value as McpScope })}
+              >
+                <option value="profile">{t('scopeProfile')}</option>
+                <option value="global">{t('scopeGlobal')}</option>
+              </select>
+              <span className="dpc-formatHint">{t('scopeHint')}</span>
+            </label>
             <label className="dpc-label">
               <span>{t('serverName')}</span>
               <input
@@ -582,13 +622,13 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
       </Modal>
 
       <Modal
-        open={confirmId !== null}
-        onClose={() => setConfirmId(null)}
+        open={confirmRow !== null}
+        onClose={() => setConfirmRow(null)}
         title={t('confirmRemove')}
-        description={confirmId ?? undefined}
+        description={confirmRow?.serverName ?? undefined}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setConfirmId(null)}>{t('cancel')}</Button>
+            <Button variant="ghost" onClick={() => setConfirmRow(null)}>{t('cancel')}</Button>
             <Button variant="primary" disabled={busy} onClick={() => void doRemove()}>{t('delete')}</Button>
           </>
         }

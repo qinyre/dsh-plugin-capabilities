@@ -114,7 +114,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
         setOutcome({ ok: true, text: t('rootRemoved') })
         refreshSkills()
       } else {
-        await mcp.remove(target.id)
+        await mcp.remove(target.id, 'profile')
         setOutcome({ ok: true, text: t('restartNeeded') })
         refreshMcp()
       }

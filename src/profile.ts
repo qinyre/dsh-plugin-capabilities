@@ -10,8 +10,12 @@ export function argvProfile(argv: readonly string[] = process.argv): string | un
   return undefined
 }
 
+/** The dsh home directory itself: `$DSH_HOME`, default `~/.dsh`. */
+export function dshHomeDir(dshHome: string | undefined = process.env.DSH_HOME): string {
+  return dshHome ?? join(homedir(), '.dsh')
+}
+
 /** Directory of a profile under DSH_HOME (default `~/.dsh`). */
 export function profileDir(profile: string, dshHome: string | undefined = process.env.DSH_HOME): string {
-  const home = dshHome ?? join(homedir(), '.dsh')
-  return join(home, 'profiles', profile)
+  return join(dshHomeDir(dshHome), 'profiles', profile)
 }

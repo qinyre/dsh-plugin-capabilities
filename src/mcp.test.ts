@@ -2,10 +2,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
+import { listMcp, listMcpScoped, mcpScopeDir, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
 
 const root = mkdtempSync(join(tmpdir(), 'dsh-caps-mcp-'))
 const profile = join(root, 'profiles', 'web')
+const home = join(root, 'home')
 afterAll(() => rmSync(root, { recursive: true, force: true }))
 
 const patch = () => join(profile, 'cordis.patch.yml')
@@ -147,5 +148,69 @@ describe('corrupt patch file', () => {
     expect(() => listMcp(brokenDir)).toThrow(/line 1/)
     expect(() => upsertMcp(brokenDir, stdio)).toThrow(/未写入任何内容/)
     expect(readFileSync(join(brokenDir, 'cordis.patch.yml'), 'utf8')).toBe(before)
+  })
+})
+
+describe('global patch layer (GitHub issue #2)', () => {
+  const cleanHome = (): void => rmSync(join(home, 'cordis.patch.yml'), { force: true })
+
+  it('merges both layers, global first, and flags shadowed profile rows', () => {
+    cleanHome()
+    mkdirSync(home, { recursive: true })
+    writeFileSync(join(home, 'cordis.patch.yml'), [
+      '- insert:',
+      '    - id: mcp-shared-tools',
+      "      name: '@deepseek-ai/dsh-mcp-client'",
+      '      config:',
+      '        serverName: shared-tools',
+      '        transport: stdio',
+      '        command: node',
+      '        args:',
+      '          - global.js',
+      '',
+    ].join('\n'), 'utf8')
+
+    upsertMcp(profile, { ...stdio, serverName: 'github' })
+    // Same id as the global row: the home layer composes after the profile
+    // layer, so this profile row never takes effect.
+    upsertMcp(profile, { ...stdio, serverName: 'shared', id: 'mcp-shared-tools' })
+
+    const { servers, globalError } = listMcpScoped(profile, home)
+    expect(globalError).toBeUndefined()
+    expect(servers.map(row => `${row.scope}/${row.id}`)).toEqual(['global/mcp-shared-tools', 'profile/mcp-github', 'profile/mcp-shared-tools'])
+    expect(servers[0]).toMatchObject({ serverName: 'shared-tools', args: ['global.js'] })
+    expect(servers[2].shadowed).toBe(true)
+    expect(servers[1].shadowed).toBeUndefined()
+
+    cleanHome()
+    expect(listMcpScoped(profile, home).servers.every(row => row.scope === 'profile')).toBe(true)
+  })
+
+  it('degrades a broken global file to globalError and still lists profile rows', () => {
+    mkdirSync(home, { recursive: true })
+    writeFileSync(join(home, 'cordis.patch.yml'), 'foo: 1\n  bar: 2\n', 'utf8')
+    const { servers, globalError } = listMcpScoped(profile, home)
+    expect(globalError).toMatch(/cordis\.patch\.yml/)
+    expect(globalError).toMatch(/line 1/)
+    expect(servers.length).toBeGreaterThan(0)
+    expect(servers.every(row => row.scope === 'profile')).toBe(true)
+    cleanHome()
+  })
+
+  it('writes, toggles, and removes through the global scope dir', () => {
+    cleanHome()
+    const globalDir = mcpScopeDir('global', profile, home)
+    expect(globalDir).toBe(home)
+
+    const id = upsertMcp(globalDir, { ...stdio, serverName: 'shared-tools' })
+    expect(id).toBe('mcp-shared-tools')
+    // The global layer file (not the profile's) received the row.
+    expect(readFileSync(join(home, 'cordis.patch.yml'), 'utf8')).toContain('shared-tools')
+
+    expect(setMcpDisabled(globalDir, id, true)).toBe(true)
+    expect(listMcp(home)[0].disabled).toBe(true)
+    expect(removeMcp(globalDir, id)).toBe(true)
+    expect(listMcp(home)).toHaveLength(0)
+    expect(listMcp(profile).some(row => row.serverName === 'shared-tools')).toBe(false)
   })
 })

@@ -27,6 +27,8 @@
 
 「MCP」页管理 profile patch 中的 MCP 服务器行，每行对应一个 `@deepseek-ai/dsh-mcp-client` 实例。stdio 服务器填写命令与参数，streamable-http 服务器填写 URL，编辑、停用、移除都在页面上完成。YAML 读写采用文档级 API，文件中的其他行与注释不受影响。新行写在一个 `- insert:` 块里——加载器只会挂载 insert 形式的行，裸的 `- id:` 条目是对已有行的覆盖，目标不存在时会被跳过；0.1.3 之前写入的裸行会在下一次保存时自动迁入 insert 块。0.3.7 起，若 `cordis.patch.yml` 本身存在语法错误（多见于手工编辑失误），页面会直接报出文件完整路径与出错行列，并且不写入任何内容；此前这种文件会在保存时抛出内部的 "Document with errors cannot be stringified"，让人无从下手。
 
+服务器行不只存在于 profile 里。dsh 还有一层全局补丁（`DSH_HOME/cordis.patch.yml`），对这台机器上的所有 profile 生效，组合时排在 profile 层之后、同名 id 以全局为准。0.3.8 起，「MCP」页把两层合在一起展示：每行带「全局」或「当前 profile」标记，两层出现同名 id 时 profile 行会注明自己不生效。添加服务器时可以选择写入哪一层，编辑、停用、移除也都落在该行所在的层。全局文件损坏不会连累整个页面：profile 行照常列出，顶部横幅单独报出全局文件的路径与出错行列。
+
 添加或编辑服务器时，表单下方有「完整格式与快速填充」区：一边是随表单实时更新的完整 YAML 行（和保存后落进 `cordis.patch.yml` 的一模一样），另一边是等价的 `mcpServers` JSON 写法，可以直接抄去别的工具。反过来也行——把 Claude Code 配置、官方文档或任意 JSON 粘进输入框，点「解析并填充」，服务器名、命令、参数、环境变量、URL、请求头都会自动填好，`{"mcpServers": {...}}` 包装、裸条目、dsh 行三种形状都认。
 
 也可以从其他 agent 导入：一键扫描 Claude Code（`~/.claude.json`、`~/.claude/settings.json`）与 Codex（`~/.codex/config.toml`）的 MCP 配置，勾选所需条目后转为本 profile 的服务器行。弹窗按来源分成 Claude Code 和 Codex 两组，各自带数量与「全选」；stdio 与 http 两种传输都会处理，已存在的同名服务器置灰跳过。需要注意的是，Claude 配置里的 `${VAR}` 环境变量引用按字面值导入，如有需要请在导入后手动改回。

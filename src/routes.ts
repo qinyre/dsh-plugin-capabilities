@@ -12,7 +12,7 @@ import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest 
 import { deleteSkill, setSkillPolicy, updateSkillFile, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
 import { removeTree } from './rmtree.ts'
-import { listMcp, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput } from './mcp.ts'
+import { listMcpScoped, mcpScopeDir, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput, type McpScope } from './mcp.ts'
 import type { CapabilitiesHost, HostSkill } from './types.ts'
 
 /**
@@ -57,8 +57,15 @@ function toRootView(entry: SkillRootEntry): SkillRootEntry & { live: boolean } {
 
 export interface CapabilitiesRoutesConfig {
   profileDirPath: string
+  /** The dsh home directory: holds the machine-wide `cordis.patch.yml`. */
+  dshHomePath: string
   /** Remount the host-plane skill provider after root-set changes. */
   remountProvider: () => Promise<void>
+}
+
+/** The request's target patch layer; unknown values fall back to the profile. */
+function readScope(value: unknown): McpScope {
+  return value === 'global' ? 'global' : 'profile'
 }
 
 /** Register the manager's routes; returns the disposer removing them all. */
@@ -408,7 +415,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           sendJson(response, 502, { error: 'market index unavailable (offline?)' })
           return
         }
-        const existing = new Set(listMcp(config.profileDirPath).map(row => row.serverName))
+        const existing = new Set(listMcpScoped(config.profileDirPath, config.dshHomePath).servers.map(row => row.serverName))
         sendJson(response, 200, {
           source: index.source,
           servers: (index.servers ?? []).map(server => ({ ...server, installed: existing.has(server.id) })),
@@ -469,7 +476,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             sendJson(response, 404, { error: 'server not found in the market index' })
             return
           }
-          if (listMcp(config.profileDirPath).some(row => row.serverName === server.id)) {
+          if (listMcpScoped(config.profileDirPath, config.dshHomePath).servers.some(row => row.serverName === server.id)) {
             sendJson(response, 409, { error: 'already installed' })
             return
           }
@@ -503,7 +510,12 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           response.end()
           return
         }
-        sendJson(response, 200, { servers: listMcp(config.profileDirPath), restartNeeded: true })
+        const listing = listMcpScoped(config.profileDirPath, config.dshHomePath)
+        sendJson(response, 200, {
+          servers: listing.servers,
+          ...(listing.globalError !== undefined ? { globalError: listing.globalError } : {}),
+          restartNeeded: true,
+        })
       },
     }),
 
@@ -521,14 +533,15 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const input = (await readJsonBody(request)) as McpInput
+          const input = (await readJsonBody(request)) as McpInput & { scope?: unknown }
           const invalid = validateMcpInput(input)
           if (invalid !== null) {
             sendJson(response, 400, { error: invalid })
             return
           }
-          const id = upsertMcp(config.profileDirPath, input)
-          sendJson(response, 200, { ok: true, id, restartNeeded: true })
+          const scope = readScope(input.scope)
+          const id = upsertMcp(mcpScopeDir(scope, config.profileDirPath, config.dshHomePath), input)
+          sendJson(response, 200, { ok: true, id, scope, restartNeeded: true })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -549,12 +562,13 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as { id?: unknown; disabled?: unknown }
+          const body = (await readJsonBody(request)) as { id?: unknown; disabled?: unknown; scope?: unknown }
           if (typeof body.id !== 'string' || typeof body.disabled !== 'boolean') {
             sendJson(response, 400, { error: 'id and disabled are required' })
             return
           }
-          const ok = setMcpDisabled(config.profileDirPath, body.id, body.disabled)
+          const dir = mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath)
+          const ok = setMcpDisabled(dir, body.id, body.disabled)
           sendJson(response, ok ? 200 : 404, ok ? { ok: true, restartNeeded: true } : { error: 'server row not found' })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
@@ -576,12 +590,13 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as { id?: unknown }
+          const body = (await readJsonBody(request)) as { id?: unknown; scope?: unknown }
           if (typeof body.id !== 'string') {
             sendJson(response, 400, { error: 'id is required' })
             return
           }
-          const ok = removeMcp(config.profileDirPath, body.id)
+          const dir = mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath)
+          const ok = removeMcp(dir, body.id)
           sendJson(response, ok ? 200 : 404, ok ? { ok: true, restartNeeded: true } : { error: 'server row not found' })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
@@ -597,13 +612,14 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           response.end()
           return
         }
-        try {
-          sendJson(response, 200, {
-            servers: scanAllMcp(),
-            // Profile serverNames, so the browser can grey out existing ones.
-            existing: listMcp(config.profileDirPath).map(row => row.serverName),
-          })
-        } catch (error) {
+          try {
+            sendJson(response, 200, {
+              servers: scanAllMcp(),
+              // ServerNames present in either patch layer, so the browser can
+              // grey out existing ones.
+              existing: listMcpScoped(config.profileDirPath, config.dshHomePath).servers.map(row => row.serverName),
+            })
+          } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
       },
@@ -633,9 +649,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           const results: Array<{ name: string; ok: boolean; error?: string }> = []
           for (const server of scanAllMcp()) {
             if (!wanted.has(`${server.agent}/${server.name}`)) continue
-            const existing = listMcp(config.profileDirPath).some(row => row.serverName === server.name)
-            if (existing) {
-              results.push({ name: server.name, ok: false, error: 'already in profile' })
+            if (listMcpScoped(config.profileDirPath, config.dshHomePath).servers.some(row => row.serverName === server.name)) {
+              results.push({ name: server.name, ok: false, error: 'already configured' })
               continue
             }
             const input: McpInput = {
