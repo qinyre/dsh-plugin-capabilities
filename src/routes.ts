@@ -465,7 +465,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as { id?: unknown }
+          const body = (await readJsonBody(request)) as { id?: unknown; scope?: unknown }
           if (typeof body.id !== 'string') {
             sendJson(response, 400, { error: 'id is required' })
             return
@@ -493,8 +493,9 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             sendJson(response, 400, { error: invalid })
             return
           }
-          const id = upsertMcp(config.profileDirPath, input)
-          sendJson(response, 200, { ok: true, id, restartNeeded: true })
+          const scope = readScope(body.scope)
+          const id = upsertMcp(mcpScopeDir(scope, config.profileDirPath, config.dshHomePath), input)
+          sendJson(response, 200, { ok: true, id, scope, restartNeeded: true })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }

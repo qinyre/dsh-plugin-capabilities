@@ -113,8 +113,8 @@ export function apply(ctx: CapabilitiesClientContext): void {
     mcpIndex: () => fetchJson<{ source: 'remote' | 'bundled'; servers: Array<MarketServerView & { installed: boolean }> }>('/dsh-plugin-capabilities/market/mcp'),
     installSkillRepo: (url: string) =>
       post('/dsh-plugin-capabilities/market/skills/install', { url }) as Promise<{ ok: boolean; root: RootRowView }>,
-    installMcp: (id: string) =>
-      post('/dsh-plugin-capabilities/market/mcp/install', { id }) as Promise<{ ok: boolean; id: string }>,
+    installMcp: (id: string, scope: McpScope) =>
+      post('/dsh-plugin-capabilities/market/mcp/install', { id, scope }) as Promise<{ ok: boolean; id: string }>,
     removeRoot: skillsInjected.removeRoot,
   }
 

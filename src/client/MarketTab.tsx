@@ -9,7 +9,7 @@ import type { ReactElement } from 'react'
 import { Button, IconRefreshOutline14, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import { CSS } from './css.ts'
 import type { MarketRepoView, MarketServerView, Translate } from './index.ts'
-import type { McpInjected } from './McpTab.tsx'
+import type { McpInjected, McpScope } from './McpTab.tsx'
 
 /** One registered skill repository as the roots route reports it. */
 export interface RootRowView {
@@ -30,7 +30,7 @@ export interface MarketInjected {
   skillsIndex(): Promise<{ source: 'remote' | 'bundled'; repos: Array<MarketRepoView & { installedId: string | null }> }>
   mcpIndex(): Promise<{ source: 'remote' | 'bundled'; servers: Array<MarketServerView & { installed: boolean }> }>
   installSkillRepo(url: string): Promise<{ ok: boolean; root: RootRowView }>
-  installMcp(id: string): Promise<{ ok: boolean; id: string }>
+  installMcp(id: string, scope: McpScope): Promise<{ ok: boolean; id: string }>
   removeRoot(id: string): Promise<{ ok: boolean }>
 }
 
@@ -46,8 +46,9 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
   const [servers, setServers] = useState<Array<MarketServerView & { installed: boolean }> | null>(null)
   const [source, setSource] = useState<'remote' | 'bundled'>('remote')
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [mcpScope, setMcpScope] = useState<McpScope>('profile')
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null)
-  const [confirmUninstall, setConfirmUninstall] = useState<{ kind: 'root' | 'mcp'; id: string; name: string } | null>(null)
+  const [confirmUninstall, setConfirmUninstall] = useState<{ kind: 'root'; id: string; name: string } | { kind: 'mcp'; id: string; name: string; scope: McpScope } | null>(null)
   const [detail, setDetail] = useState<{ kind: Segment; id: string } | null>(null)
   const [reload, setReload] = useState(0)
 
@@ -93,7 +94,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
     setBusyId(server.id)
     setOutcome(null)
     try {
-      await market.installMcp(server.id)
+      await market.installMcp(server.id, mcpScope)
       setOutcome({ ok: true, text: t('restartNeeded') })
       refreshMcp()
     } catch (error) {
@@ -114,7 +115,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
         setOutcome({ ok: true, text: t('rootRemoved') })
         refreshSkills()
       } else {
-        await mcp.remove(target.id, 'profile')
+        await mcp.remove(target.id, target.scope)
         setOutcome({ ok: true, text: t('restartNeeded') })
         refreshMcp()
       }
@@ -213,6 +214,21 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
       {segment === 'mcp' && (
         <>
           <p className="dpc-intro">{t('marketMcpIntro')}</p>
+          <div className="dpc-cardRow">
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span>{t('scopeLabel')}</span>
+              <select
+                className="dpc-select"
+                style={{ width: 'auto' }}
+                value={mcpScope}
+                disabled={busyId !== null}
+                onChange={(event) => setMcpScope(event.target.value as McpScope)}
+              >
+                <option value="profile">{t('scopeProfile')}</option>
+                <option value="global">{t('scopeGlobal')}</option>
+              </select>
+            </label>
+          </div>
           {servers === null && <p className="dpc-empty">{t('loading')}</p>}
           {servers !== null && servers.length === 0 && <p className="dpc-empty">{t('marketEmpty')}</p>}
           {servers !== null && servers.length > 0 && (
@@ -237,7 +253,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
                       <Button variant="ghost" size="sm" disabled={busyId !== null} onClick={(event) => { event.stopPropagation(); void mcp.list().then(
                         (body) => {
                           const row = body.servers.find(item => item.serverName === server.id)
-                          if (row !== undefined) setConfirmUninstall({ kind: 'mcp', id: row.id, name: server.id })
+                          if (row !== undefined) setConfirmUninstall({ kind: 'mcp', id: row.id, name: server.id, scope: row.scope })
                         },
                         (error: Error) => setOutcome({ ok: false, text: `${t('failed')}: ${String(error.message ?? error)}` }),
                       ) }}>
@@ -285,7 +301,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
               <Button variant="ghost" disabled={busyId !== null} onClick={() => void mcp.list().then(
                 (body) => {
                   const row = body.servers.find(item => item.serverName === detailServer.id)
-                  if (row !== undefined) { setConfirmUninstall({ kind: 'mcp', id: row.id, name: title(detailServer) }); setDetail(null) }
+                  if (row !== undefined) { setConfirmUninstall({ kind: 'mcp', id: row.id, name: title(detailServer), scope: row.scope }); setDetail(null) }
                 },
                 (error: Error) => setOutcome({ ok: false, text: `${t('failed')}: ${String(error.message ?? error)}` }),
               )}>
