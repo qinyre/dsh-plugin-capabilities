@@ -5,7 +5,8 @@
 
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
-import { Button, IconRefreshOutline14, IconSkillOutline16, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconRefresh, IconSkill } from './icons.ts'
 import { CSS } from './css.ts'
 import { MarkdownPreview } from './MarkdownPreview.tsx'
 import type { OpenTarget, Translate } from './index.ts'
@@ -289,7 +290,7 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
       <style>{CSS}</style>
 
       <div className="dpc-head">
-        <IconSkillOutline16 aria-hidden="true" />
+        <IconSkill aria-hidden="true" />
         <h3>{t('skillsTitle')}</h3>
         <span className="dpc-spacer" />
         <Button variant="ghost" size="sm" onClick={() => void doOpen({ target: 'user-skills' })}>{t('openUserSkills')}</Button>
@@ -317,7 +318,7 @@ export function SkillsTab(props: { t: Translate; injected: SkillsInjected }): Re
           onChange={(event) => setQuery(event.target.value)}
         />
         <button type="button" className="dpc-refresh" aria-label={t('refresh')} title={t('refresh')} disabled={busy} onClick={() => setReload((value) => value + 1)}>
-          <IconRefreshOutline14 size={14} aria-hidden="true" />
+          <IconRefresh size={14} aria-hidden="true" />
         </button>
       </div>
 

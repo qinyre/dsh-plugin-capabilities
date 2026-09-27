@@ -5,7 +5,8 @@
 
 import { useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
-import { Button, IconApiOutline14, IconRefreshOutline14, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconApi, IconRefresh } from './icons.ts'
 import { CSS } from './css.ts'
 import type { ImportedServerView, Translate } from './index.ts'
 
@@ -480,7 +481,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
       <style>{CSS}</style>
 
       <div className="dpc-head">
-        <IconApiOutline14 aria-hidden="true" />
+        <IconApi size={14} aria-hidden="true" />
         <h3>{t('mcpTitle')}</h3>
         <span className="dpc-spacer" />
         <Button variant="ghost" size="sm" disabled={restarting} onClick={() => setRestartConfirm(true)}>{t('restart')}</Button>
@@ -511,7 +512,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         {servers !== null && <span className="dpc-count">{servers.length}</span>}
         <span className="dpc-spacer" />
         <button type="button" className="dpc-refresh" aria-label={t('view')} title={t('view')} disabled={busy} onClick={() => setReload((value) => value + 1)}>
-          <IconRefreshOutline14 size={14} aria-hidden="true" />
+          <IconRefresh size={14} aria-hidden="true" />
         </button>
       </div>
 

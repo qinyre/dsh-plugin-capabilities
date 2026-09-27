@@ -6,7 +6,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { ReactElement } from 'react'
-import { Button, IconRefreshOutline14, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, Modal, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconRefresh } from './icons.ts'
 import { CSS } from './css.ts'
 import type { MarketRepoView, MarketServerView, Translate } from './index.ts'
 import type { McpInjected, McpScope } from './McpTab.tsx'
@@ -148,7 +149,7 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
         <h3>{t('marketTitle')}</h3>
         <span className="dpc-spacer" />
         <button type="button" className="dpc-refresh" aria-label={t('refresh')} title={t('refresh')} onClick={() => setReload((value) => value + 1)}>
-          <IconRefreshOutline14 size={14} aria-hidden="true" />
+          <IconRefresh size={14} aria-hidden="true" />
         </button>
       </div>
       <p className="dpc-intro">{t('marketIntro')}</p>
