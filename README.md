@@ -7,7 +7,7 @@
 
 ## 技能
 
-![「技能」标签页](docs/images/screenshot-skills.png)
+<p align="center"><img src="docs/images/screenshot-skills.png" width="60%" alt="「技能」标签页"></p>
 
 列出 dsh 当前发现的全部技能，带名称、描述、来源与调用策略。用户级技能（`$DSH_HOME/skills`）可在页面上新建、编辑、删除，文件保存后数秒生效、无需重启；从市场或仓库安装的技能也能就地编辑，写回只替换编辑器掌握的几个键，frontmatter 其余内容（license、allowed-tools 等）原样保留。
 
@@ -19,7 +19,7 @@
 
 ## MCP
 
-![「MCP」标签页](docs/images/screenshot-mcp.png)
+<p align="center"><img src="docs/images/screenshot-mcp.png" width="60%" alt="「MCP」标签页"></p>
 
 管理 `@deepseek-ai/dsh-mcp-client` 服务器行，stdio 与 streamable-http 均支持，添加、编辑、停用、移除都在页面完成；YAML 走文档树读写，文件里的其他行与注释不受影响，补丁文件本身有语法错误时页面直接报出路径与行列、不写入任何内容。profile 层与全局层（`DSH_HOME/cordis.patch.yml`）合并展示，每行标记所在层、同名时注明谁生效，添加与复制可任选目标层；「检查」不启动服务器——stdio 在 PATH 里确认命令存在，http 发一个短超时 GET 即判断可达。
 
@@ -29,9 +29,10 @@ MCP 变更需重启 dsh 生效，页头的「重启」按钮不必离开界面�
 
 ## 市场
 
-![「技能市场」](docs/images/screenshot-market-skills.png)
-
-![「MCP 市场」](docs/images/screenshot-market-mcp.png)
+<p align="center">
+  <img src="docs/images/screenshot-market-skills.png" width="49%" alt="「技能市场」">
+  <img src="docs/images/screenshot-market-mcp.png" width="49%" alt="「MCP 市场」">
+</p>
 
 「技能市场」是精选的技能仓库（Anthropic 官方技能集、Superpowers 工作流集等），点「安装」即走上文仓库的下载解包流程，装完立即出现在「技能」页；「MCP 市场」是精选服务器列表（filesystem、memory、git 及 context7 等常用第三方），点「添加」等价于手工添加一条服务器行，写入哪一层跟随列表上方的范围选择。条目都可点开看详情：技能仓库列出内含技能清单，MCP 服务器列出启动命令、环境变量与工具清单。列表来自[本仓库](https://github.com/qinyre/dsh-plugin-capabilities)的在线索引，离线时回退包内快照；已安装条目可直接卸载。
 
