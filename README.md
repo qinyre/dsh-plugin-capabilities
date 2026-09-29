@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/dsh-plugin-capabilities)](https://www.npmjs.com/package/dsh-plugin-capabilities)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-在 dsh 设置页管理技能与 MCP 服务器。设置里新增一级分区「技能与 MCP」（与「通用设置」「模型」并列），内含「技能」「MCP」「市场」三个标签页：技能目录、自定义技能仓库和两层（profile / 全局）MCP 服务器行都能在页面上直接维护，不必手工编辑 YAML；Claude Code、Codex、Cursor、Gemini CLI 等其他 agent 的技能与 MCP 配置也能一键纳入。`dsh web` 与 [DSH Desktop](https://github.com/qinyre/dsh-Desktop) 均可使用，新旧两代运行时（0.1.1 至 0.1.7-rc.2）均实测兼容。
+在 dsh 设置页管理技能与 MCP 服务器。设置里新增一级分区「技能与 MCP」（与「通用设置」「模型」并列），内含「技能」「MCP」「市场」三个标签页：技能目录、自定义技能仓库和两层（profile / 全局）MCP 服务器行都能在页面上直接维护，不必手工编辑 YAML；Claude Code、Codex、Cursor、Gemini CLI 等其他 agent 的技能与 MCP 配置也能一键纳入。在 `dsh web`（含桌面端内嵌的 Web 界面）中均可使用，新旧两代运行时（0.1.1 至 0.1.7-rc.2）均实测兼容。
 
 ## 技能
 
