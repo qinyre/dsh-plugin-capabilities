@@ -19,6 +19,7 @@ import { openSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import type { IncomingMessage } from 'node:http'
+import { desktopForwarded } from './http.ts'
 
 /** The boot invocation to replay: entry from argv, execArgv preserved. */
 export function dshLaunch(argv: readonly string[] = process.argv, execArgv: readonly string[] = process.execArgv): {
@@ -69,7 +70,9 @@ export function scheduleRestart(launch: ReturnType<typeof dshLaunch>): {
 /**
  * A restart request is process control: only a direct same-origin loopback
  * request qualifies. Any forwarding trace means the loopback peer is a
- * proxy, not the user's browser.
+ * proxy, not the user's browser. An Origin-less request qualifies only as
+ * the official Desktop shell's forwarded channel (desktopForwarded) —
+ * there the shell itself owns restarts, so the route answers accordingly.
  */
 export function trustedRestartRequest(request: IncomingMessage, socketAddress?: string): boolean {
   const address = socketAddress ?? (request.socket.remoteAddress ?? '')
@@ -79,7 +82,8 @@ export function trustedRestartRequest(request: IncomingMessage, socketAddress?: 
     || request.headers['x-real-ip'] !== undefined) return false
   const origin = request.headers.origin
   const host = request.headers.host
-  if (origin === undefined || host === undefined) return false
+  if (host === undefined) return false
+  if (origin === undefined) return desktopForwarded(request)
   try {
     const parsed = new URL(origin)
     return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.host === host

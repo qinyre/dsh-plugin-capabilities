@@ -36,10 +36,13 @@ describe('trustedRestartRequest', () => {
     expect(trustedRestartRequest(request({ origin: 'http://127.0.0.1:8080', host: '127.0.0.1:8080' }, '192.168.1.5'))).toBe(false)
     expect(trustedRestartRequest(request({ origin: 'http://127.0.0.1:8080', host: '127.0.0.1:8080', 'x-forwarded-for': '1.2.3.4' }))).toBe(false)
   })
-  it('rejects cross-origin or missing origin/host', () => {
+  it('rejects cross-origin, missing host, and hostile Origin-less shapes', () => {
     expect(trustedRestartRequest(request({ origin: 'http://evil.example', host: '127.0.0.1:8080' }))).toBe(false)
-    expect(trustedRestartRequest(request({ host: '127.0.0.1:8080' }))).toBe(false)
+    expect(trustedRestartRequest(request({ host: '127.0.0.1:8080', 'sec-fetch-site': 'cross-site' }))).toBe(false)
     expect(trustedRestartRequest(request({ origin: 'http://127.0.0.1:8080' }))).toBe(false)
+  })
+  it('accepts the Origin-less desktop shell channel (loopback Host, loopback peer, no proxy trace)', () => {
+    expect(trustedRestartRequest(request({ host: '127.0.0.1:19387' }))).toBe(true)
   })
 })
 

@@ -46,7 +46,7 @@ dsh plugin --profile web add dsh-plugin-capabilities
 
 ## 工作原理
 
-服务端在 web 服务器上注册 `/dsh-plugin-capabilities/*` 路由，并在宿主平面挂载自己的 filesystem provider 子插件以获得实时技能目录——其他 agent 的目录与用户注册的仓库作为额外扫描根，随插件装卸，不动 preset 层语义。GitHub 仓库由内置纯 JS tar 读取器解包，全程不 spawn 子进程；写操作带同源栅栏与输入校验（技能名、serverName 语法、路径穿越拒绝）。
+服务端在 web 服务器上注册 `/dsh-plugin-capabilities/*` 路由，并在宿主平面挂载自己的 filesystem provider 子插件以获得实时技能目录——其他 agent 的目录与用户注册的仓库作为额外扫描根，随插件装卸，不动 preset 层语义。GitHub 仓库由内置纯 JS tar 读取器解包，全程不 spawn 子进程；写操作带同源栅栏与输入校验（技能名、serverName 语法、路径穿越拒绝）。官方桌面壳转发而来的请求没有 Origin 头，仅当回环 Host、回环连接对端、无代理痕迹且无跨站 Sec-Fetch-Site 标记时放行。
 
 ## 开发
 
