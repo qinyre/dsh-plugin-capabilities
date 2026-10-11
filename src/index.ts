@@ -11,7 +11,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { agentSkillRoots } from './agents.ts'
-import { argvProfile, dshHomeDir, profileDir } from './profile.ts'
+import { activeProfileContext, argvProfile, dshHomeDir, profileDir } from './profile.ts'
 import { mountCapabilitiesRoutes } from './routes.ts'
 import { loadState } from './state.ts'
 import type { CapabilitiesHost } from './types.ts'
@@ -48,7 +48,16 @@ interface PluginFiber {
 }
 
 export function apply(ctx: Context, config?: Config): void {
-  const profile = config?.profile ?? argvProfile() ?? 'web'
+  // The desktop host never puts --profile on argv; prefer the profile the
+  // module physically runs from (pnpm resolves installs under
+  // <home>/profiles/<name>/node_modules) so profile-scoped MCP writes land
+  // on the right one. The argv fallback covers file: development checkouts,
+  // which sit outside any profile.
+  const active = activeProfileContext(fileURLToPath(import.meta.url))
+  const profile = config?.profile ?? active?.profile ?? argvProfile() ?? 'web'
+  const profileDirPath = config?.profile !== undefined || active === undefined
+    ? profileDir(profile)
+    : active.profileDirPath
   ctx.inject(['webServer', 'skills'], (hostCtx: Context) => {
     // The web bundle disables the host-plane `skill-filesystem` row on
     // purpose (presets own per-session discovery). The Settings manager
@@ -101,7 +110,7 @@ export function apply(ctx: Context, config?: Config): void {
 
       ctx.effect(
         () => mountCapabilitiesRoutes(hostCtx as unknown as CapabilitiesHost, {
-          profileDirPath: profileDir(profile),
+          profileDirPath,
           dshHomePath: dshHomeDir(),
           remountProvider,
         }),
