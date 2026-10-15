@@ -11,7 +11,17 @@
 
 列出 dsh 当前发现的全部技能，带名称、描述、来源与调用策略。用户级技能（`$DSH_HOME/skills`）可在页面上新建、编辑、删除，文件保存后数秒生效、无需重启；从市场或仓库安装的技能也能就地编辑，写回只替换编辑器掌握的几个键，frontmatter 其余内容（license、allowed-tools 等）原样保留。
 
-落在磁盘上的技能都有开关：关掉即从模型目录与 `/` 命令摘除，打开恢复默认，文件其余内容一字不动。列表带搜索与来源筛选，卡片上可一键打开技能所在文件夹。若存在 `~/.claude/skills` 或 `~/.codex/skills`，会作为额外扫描根实时纳入，零拷贝、原地同步。插件还随包自带 skill-creator 与 find-skills 两条只读技能（来自 [anthropics/skills](https://github.com/anthropics/skills) 与 [vercel-labs/skills](https://github.com/vercel-labs/skills)），随插件升级与卸载。
+落在磁盘上的技能都有开关：关掉即从模型目录与 `/` 命令摘除，打开恢复默认，文件其余内容一字不动。列表带搜索与来源筛选，卡片上可一键打开技能所在文件夹。
+
+本机其他 agent 的技能目录会自动纳入扫描，零拷贝、原地同步：Claude Code、Codex、Gemini CLI、Cursor、GitHub Copilot、Windsurf、OpenCode、Trae（含 CN）、Roo Code、Qoder（含 CN）、CodeBuddy、WorkBuddy、OpenClaw 与 CC Switch，目录存在才扫。技能嵌在 marketplace 之类的子目录里也能找到——插件会定位嵌套的技能文件夹并把它的父目录挂进扫描。目录来源在列表里按 agent 名标注（Claude Code、Codex……），可按来源筛选。装了新的 agent 后重启 dsh 即纳入。插件还随包自带 skill-creator 与 find-skills 两条只读技能（来自 [anthropics/skills](https://github.com/anthropics/skills) 与 [vercel-labs/skills](https://github.com/vercel-labs/skills)），随插件升级与卸载。
+
+### 项目技能
+
+「技能」页顶部的工作区下拉列出 dsh 已登记的工作区；选定后列表即针对该工作区——项目里的 `.dsh/skills` 与 `.agents/skills` 会进入目录（`项目` 标签），可查看、开关与就地编辑 `.dsh/skills` 里的技能，与全局目录互不干扰。切回「全局」即回到默认视图。
+
+### 导入技能
+
+「导入技能」支持三种来源：文件夹（单个技能目录，或装着多个技能与散装 `.md` 文件的集合）、单个 `.md` 文件、ZIP 压缩包（≤32 MiB，自动穿透 GitHub 式的仓库包装目录）。目的地可选用户目录（`DSH_HOME/skills`）或某个工作区的 `.dsh/skills`（确认后自动创建）；同名冲突可跳过或覆盖，逐条结果当场列出。导入的技能按 frontmatter 的 `name`（缺省时按文件夹/文件名归一成 kebab-case）落盘，装完即被目录发现，无需重启。
 
 ### 技能仓库
 

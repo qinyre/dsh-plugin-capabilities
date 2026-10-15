@@ -2,8 +2,10 @@
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { mkdirSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join, sep } from 'node:path'
-import { scanAllMcp } from './agents.ts'
+import { agentSourceOf, scanAllMcp } from './agents.ts'
+import { importSkills, importZip } from './import.ts'
 import { readJsonBody, sameOrigin, sendJson } from './http.ts'
 import { loadMarketIndex, type MarketMcpServer } from './market.ts'
 import { openDirectory } from './opener.ts'
@@ -12,6 +14,7 @@ import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest 
 import { deleteSkill, setSkillPolicy, updateSkillFile, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
 import { removeTree } from './rmtree.ts'
+import { listWorkspaces, resolveWorkspacePath } from './workspaces.ts'
 import { checkMcpRow, listMcp, listMcpScoped, mcpRowToInput, mcpScopeDir, removeMcp, setMcpDisabled, upsertMcp, validateMcpInput, type McpInput, type McpScope } from './mcp.ts'
 import type { CapabilitiesHost, HostSkill } from './types.ts'
 
@@ -29,25 +32,50 @@ function customSkillWritable(dir: string, dshHome: string | undefined): boolean 
     entry.roots.some(root => dir === root || dir.startsWith(root + sep)))
 }
 
-/** Whether the save route may write this catalog row back to disk. */
+/** Whether the save route may write this catalog row back to disk. User
+ * skills and project `.dsh/skills` are the user's own; custom roots must sit
+ * inside what this plugin manages. */
 function skillWritable(skill: HostSkill, dir: string | undefined, dshHome: string | undefined): boolean {
   if (dir === undefined) return false
-  if (skill.source === 'user-dsh') return true
+  if (skill.source === 'user-dsh' || skill.source === 'project-dsh') return true
   return skill.source === 'custom' && customSkillWritable(dir, dshHome)
 }
 
 /** One catalog skill as the browser sees it (editable/dir flags added). */
-type SkillRow = HostSkill & { editable: boolean; removable: boolean; dir?: string; policyEditable: boolean }
+type SkillRow = HostSkill & {
+  editable: boolean
+  removable: boolean
+  dir?: string
+  policyEditable: boolean
+  /** Set when the directory belongs to a cataloged foreign agent. */
+  agent?: string
+  /** Display label for the agent (brand name; locale-neutral). */
+  agentLabel?: string
+}
 
 function toSkillRow(skill: HostSkill, dshHome: string | undefined): SkillRow {
   const dir = skill.resourceBase?.kind === 'directory' ? skill.resourceBase.path : undefined
+  const agent = skill.source === 'custom' ? agentSourceOf(dir, homedir()) : undefined
   return {
     ...skill,
     editable: skillWritable(skill, dir, dshHome),
     removable: skill.source === 'user-dsh',
     ...(dir !== undefined ? { dir } : {}),
     policyEditable: dir !== undefined,
+    ...(agent !== undefined ? { agent: agent.key, agentLabel: agent.label } : {}),
   }
+}
+
+/**
+ * Resolve the optional `workspace` reference (id or path) of a request into a
+ * cwd for the skills service. Absent → undefined (global catalog); present
+ * but unknown → null (caller answers 422) — never a silent fallback to the
+ * global catalog.
+ */
+function workspaceCwdOf(host: CapabilitiesHost, value: unknown): string | undefined | null {
+  if (value === undefined || value === null || value === '') return undefined
+  if (typeof value !== 'string') return null
+  return resolveWorkspacePath(host, value) ?? null
 }
 
 /** One registered repository plus a liveness flag (roots can go stale). */
@@ -73,6 +101,19 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
   const disposers = [
     host.webServer.register({
       kind: 'exact',
+      path: '/dsh-plugin-capabilities/workspaces',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'GET') {
+          response.writeHead(405, { allow: 'GET' })
+          response.end()
+          return
+        }
+        sendJson(response, 200, listWorkspaces(host))
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
       path: '/dsh-plugin-capabilities/skills',
       handler: async (request: IncomingMessage, response: ServerResponse) => {
         if (request.method !== 'GET') {
@@ -80,8 +121,14 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           response.end()
           return
         }
+        const url = new URL(request.url ?? '/', 'http://localhost')
+        const cwd = workspaceCwdOf(host, url.searchParams.get('workspace'))
+        if (cwd === null) {
+          sendJson(response, 422, { error: 'workspace not found' })
+          return
+        }
         try {
-          const skills = await host.skills.list()
+          const skills = await host.skills.list(cwd === undefined ? {} : { cwd })
           sendJson(response, 200, { skills: skills.map(skill => toSkillRow(skill, process.env.DSH_HOME)) })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
@@ -100,8 +147,13 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
         }
         const url = new URL(request.url ?? '/', 'http://localhost')
         const name = url.searchParams.get('name') ?? ''
+        const cwd = workspaceCwdOf(host, url.searchParams.get('workspace'))
+        if (cwd === null) {
+          sendJson(response, 422, { error: 'workspace not found' })
+          return
+        }
         try {
-          const definition = await host.skills.get(name)
+          const definition = await host.skills.get(name, cwd === undefined ? {} : { cwd })
           if (definition === undefined) {
             sendJson(response, 404, { error: 'skill not found' })
             return
@@ -127,7 +179,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as Partial<SkillInput>
+          const body = (await readJsonBody(request)) as Partial<SkillInput> & { workspace?: unknown }
           const input: SkillInput = {
             name: typeof body.name === 'string' ? body.name : '',
             description: typeof body.description === 'string' ? body.description : '',
@@ -141,12 +193,17 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             sendJson(response, 400, { error: invalid })
             return
           }
+          const cwd = workspaceCwdOf(host, body.workspace)
+          if (cwd === null) {
+            sendJson(response, 422, { error: 'workspace not found' })
+            return
+          }
           // An existing skill edits in place (its own folder, whichever
           // editable source it comes from — preserving frontmatter keys the
           // editor does not own); a new name creates in the user root. The
           // file location is resolved server-side from the catalog, never
           // taken from the request.
-          const existing = (await host.skills.list()).find(skill => skill.name === input.name)
+          const existing = (await host.skills.list(cwd === undefined ? {} : { cwd })).find(skill => skill.name === input.name)
           if (existing !== undefined) {
             const dir = existing.resourceBase?.kind === 'directory' ? existing.resourceBase.path : undefined
             if (!skillWritable(existing, dir, process.env.DSH_HOME)) {
@@ -154,6 +211,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
               return
             }
             updateSkillFile(join(dir as string, 'SKILL.md'), input)
+          } else if (cwd !== undefined) {
+            sendJson(response, 422, { error: 'new skills can only be created in the user root (use import for workspaces)' })
           } else {
             writeSkill(input)
           }
@@ -202,12 +261,17 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as { name?: unknown; enabled?: unknown }
+          const body = (await readJsonBody(request)) as { name?: unknown; enabled?: unknown; workspace?: unknown }
           if (typeof body.name !== 'string' || typeof body.enabled !== 'boolean') {
             sendJson(response, 400, { error: 'name and enabled are required' })
             return
           }
-          const definition = await host.skills.get(body.name)
+          const cwd = workspaceCwdOf(host, body.workspace)
+          if (cwd === null) {
+            sendJson(response, 422, { error: 'workspace not found' })
+            return
+          }
+          const definition = await host.skills.get(body.name, cwd === undefined ? {} : { cwd })
           if (definition === undefined) {
             sendJson(response, 404, { error: 'skill not found' })
             return
@@ -238,7 +302,7 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           return
         }
         try {
-          const body = (await readJsonBody(request)) as { target?: unknown; name?: unknown; id?: unknown }
+          const body = (await readJsonBody(request)) as { target?: unknown; name?: unknown; id?: unknown; workspace?: unknown }
           if (typeof body.target !== 'string') {
             sendJson(response, 400, { error: 'target is required' })
             return
@@ -258,7 +322,12 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
               sendJson(response, 400, { error: 'name is required' })
               return
             }
-            const definition = await host.skills.get(body.name)
+            const cwd = workspaceCwdOf(host, body.workspace)
+            if (cwd === null) {
+              sendJson(response, 422, { error: 'workspace not found' })
+              return
+            }
+            const definition = await host.skills.get(body.name, cwd === undefined ? {} : { cwd })
             if (definition === undefined) {
               sendJson(response, 404, { error: 'skill not found' })
               return
@@ -288,6 +357,65 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           sendJson(response, 200, { ok: true })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
+        }
+      },
+    }),
+
+    host.webServer.register({
+      kind: 'exact',
+      path: '/dsh-plugin-capabilities/skills/import',
+      handler: async (request: IncomingMessage, response: ServerResponse) => {
+        if (request.method !== 'POST') {
+          response.writeHead(405, { allow: 'POST' })
+          response.end()
+          return
+        }
+        if (!sameOrigin(request)) {
+          sendJson(response, 403, { error: 'untrusted origin' })
+          return
+        }
+        try {
+          // ZIP uploads arrive base64-encoded, so this route alone raises the
+          // body bound (32 MiB archive ≈ 43.5 MiB base64).
+          const body = (await readJsonBody(request, 48 * 1024 * 1024)) as {
+            source?: { kind?: unknown; path?: unknown; data?: unknown }
+            dest?: { kind?: unknown; id?: unknown }
+            conflict?: unknown
+          }
+          const source = body.source ?? {}
+          const conflict = body.conflict === 'overwrite' ? 'overwrite' : 'skip'
+          let destDir: string
+          if ((body.dest?.kind ?? 'user') === 'user') {
+            destDir = userSkillsDir()
+          } else {
+            const workspacePath = typeof body.dest?.id === 'string' ? resolveWorkspacePath(host, body.dest.id) : undefined
+            if (workspacePath === undefined) {
+              sendJson(response, 422, { error: 'workspace not found' })
+              return
+            }
+            destDir = join(workspacePath, '.dsh', 'skills')
+          }
+          if (source.kind === 'zip') {
+            if (typeof source.data !== 'string' || source.data === '') {
+              sendJson(response, 400, { error: 'zip upload data is required' })
+              return
+            }
+            const outcome = importZip(source.data, destDir, conflict)
+            sendJson(response, 200, { ok: outcome.failed.length === 0, ...outcome })
+            return
+          }
+          if (source.kind === 'folder' || source.kind === 'file') {
+            if (typeof source.path !== 'string' || source.path.trim() === '') {
+              sendJson(response, 400, { error: 'source path is required' })
+              return
+            }
+            const outcome = importSkills(source.path.trim(), destDir, conflict)
+            sendJson(response, 200, { ok: outcome.failed.length === 0, ...outcome })
+            return
+          }
+          sendJson(response, 400, { error: 'source.kind must be folder, file, or zip' })
+        } catch (error) {
+          sendJson(response, 400, { error: error instanceof Error ? error.message : String(error) })
         }
       },
     }),

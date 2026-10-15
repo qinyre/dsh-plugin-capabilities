@@ -5,9 +5,10 @@
  * well-known paths; anything missing or malformed yields an empty list.
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import type { Dirent } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, sep } from 'node:path'
 import { parse as parseToml } from 'smol-toml'
 import type { McpTransport } from './mcp.ts'
 
@@ -179,8 +180,124 @@ export function scanAllMcp(home: string = homedir()): ImportedServer[] {
     })
 }
 
-/** Other agents' skill roots that exist on this machine. */
+/** One foreign agent whose skill directory this plugin scans when present. */
+export interface AgentSkillSource {
+  /** Stable key (surfaces on skill rows as `agent` for the UI). */
+  key: string
+  /** Display label — brand names, locale-neutral on purpose. */
+  label: string
+  /** Home-relative path segments. */
+  segments: string[]
+}
+
+/**
+ * Curated foreign-agent skill directories (user level). `~/.agents/skills`
+ * is deliberately absent: the mounted provider's own user-agents root already
+ * covers it, and mounting it twice would double-watch the same tree.
+ */
+export const AGENT_SKILL_SOURCES: readonly AgentSkillSource[] = [
+  { key: 'claude', label: 'Claude Code', segments: ['.claude', 'skills'] },
+  { key: 'codex', label: 'Codex', segments: ['.codex', 'skills'] },
+  { key: 'gemini', label: 'Gemini CLI', segments: ['.gemini', 'skills'] },
+  { key: 'cursor', label: 'Cursor', segments: ['.cursor', 'skills'] },
+  { key: 'copilot', label: 'GitHub Copilot', segments: ['.copilot', 'skills'] },
+  { key: 'windsurf', label: 'Windsurf', segments: ['.codeium', 'windsurf', 'skills'] },
+  { key: 'windsurf-alt', label: 'Windsurf', segments: ['.windsurf', 'skills'] },
+  { key: 'opencode', label: 'OpenCode', segments: ['.config', 'opencode', 'skills'] },
+  { key: 'trae', label: 'Trae', segments: ['.trae', 'skills'] },
+  { key: 'trae-cn', label: 'Trae CN', segments: ['.trae-cn', 'skills'] },
+  { key: 'roo', label: 'Roo Code', segments: ['.roo', 'skills'] },
+  { key: 'qoder', label: 'Qoder', segments: ['.qoder', 'skills'] },
+  { key: 'qoder-cn', label: 'Qoder CN', segments: ['.qoder-cn', 'skills'] },
+  { key: 'codebuddy', label: 'CodeBuddy', segments: ['.codebuddy', 'skills'] },
+  { key: 'workbuddy', label: 'WorkBuddy', segments: ['.workbuddy', 'skills'] },
+  { key: 'openclaw', label: 'OpenClaw', segments: ['.openclaw', 'skills'] },
+  { key: 'clawdbot', label: 'OpenClaw', segments: ['.clawdbot', 'skills'] },
+  { key: 'cc-switch', label: 'CC Switch', segments: ['.cc-switch', 'skills'] },
+]
+
+/** The user-level catalog path of one source key (undefined when unknown). */
+export function agentSkillSourcePath(key: string, home: string = homedir()): string | undefined {
+  const source = AGENT_SKILL_SOURCES.find(row => row.key === key)
+  return source === undefined ? undefined : join(home, ...source.segments)
+}
+
+/** Which catalog source (if any) a skill directory belongs to. */
+export function agentSourceOf(dir: string | undefined, home: string = homedir()): AgentSkillSource | undefined {
+  if (dir === undefined) return undefined
+  for (const source of AGENT_SKILL_SOURCES) {
+    const root = join(home, ...source.segments)
+    if (dir === root || dir.startsWith(root + sep)) return source
+  }
+  return undefined
+}
+
+/**
+ * The filesystem provider scans each mount root exactly one level deep, but
+ * real agent trees nest skills inside marketplace/plugin subdirectories. Walk
+ * a root's subtree (bounded) and return the parent directory of every skill
+ * folder found — mounting those parents makes every discovered skill visible
+ * to the provider's one-level scan without changing the mount mechanism.
+ * A directory holding SKILL.md is a leaf: never descended into, so no skill
+ * is ever contributed twice.
+ */
+export function expandAgentRoots(root: string, limits: { maxDepth?: number; maxDirs?: number } = {}): string[] {
+  const maxDepth = limits.maxDepth ?? 4
+  const maxDirs = limits.maxDirs ?? 300
+  const parents = new Set<string>()
+  let visited = 0
+  const walk = (dir: string, depth: number): void => {
+    if (visited >= maxDirs) return
+    visited++
+    let skillDoc = false
+    let entries: Dirent[]
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) {
+      if (entry.isFile() && entry.name === 'SKILL.md') skillDoc = true
+    }
+    if (skillDoc) {
+      // The root itself is a single skill: its parent must be the mount root
+      // for the provider's child scan to see it.
+      parents.add(dirname(dir) === dir ? dir : dirname(dir))
+      return
+    }
+    if (depth >= maxDepth) return
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue
+      if (entry.isSymbolicLink()) continue
+      walk(join(dir, entry.name), depth + 1)
+      if (visited >= maxDirs) return
+    }
+  }
+  if (!existsSync(root)) return []
+  walk(root, 0)
+  return [...parents]
+}
+
+/** Other agents' skill roots that exist on this machine (depth-1 layout). */
 export function agentSkillRoots(home: string = homedir()): string[] {
-  return [join(home, '.claude', 'skills'), join(home, '.codex', 'skills')]
+  return AGENT_SKILL_SOURCES
+    .map(source => join(home, ...source.segments))
     .filter(path => existsSync(path))
+}
+
+/**
+ * Mount set for the agent catalog: each existing root plus the parents of
+ * nested skill folders found beneath it (see expandAgentRoots). Deduplicated
+ * and existence-filtered — this is what feeds customSkillDirs at remount.
+ */
+export function agentSkillMountRoots(home: string = homedir()): string[] {
+  const out = new Set<string>()
+  for (const source of AGENT_SKILL_SOURCES) {
+    const root = join(home, ...source.segments)
+    if (!existsSync(root)) continue
+    out.add(root)
+    for (const parent of expandAgentRoots(root)) out.add(parent)
+  }
+  return [...out]
 }

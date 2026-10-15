@@ -10,7 +10,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { agentSkillRoots } from './agents.ts'
+import { agentSkillMountRoots } from './agents.ts'
 import { activeProfileContext, argvProfile, dshHomeDir, profileDir } from './profile.ts'
 import { mountCapabilitiesRoutes } from './routes.ts'
 import { loadState } from './state.ts'
@@ -68,11 +68,14 @@ export function apply(ctx: Context, config?: Config): void {
     // wins duplicate names). Custom roots, in scan order: the package's own
     // vendored skills (read-only, update with the plugin), the user's
     // registered repositories (local paths and GitHub checkouts, managed
-    // from the Settings page), then other agents' skill roots
-    // (~/.claude/skills, ~/.codex/skills) — zero-copy, live-synced both
-    // ways. Registering or removing a repository remounts the provider with
-    // the new root set; a failed load only means an empty catalog — the
-    // routes keep serving.
+    // from the Settings page), then the foreign-agent skill catalog —
+    // zero-copy, live-synced both ways. Registering or removing a repository
+    // remounts the provider with the new root set; a failed load only means
+    // an empty catalog — the routes keep serving. The agent catalog (Claude
+    // Code, Codex, Gemini, Cursor, …) contributes each existing root plus
+    // parents of nested skill folders, so marketplace-style layouts stay
+    // discoverable through the provider's one-level scan; a newly installed
+    // agent's directory shows up on the next remount or restart.
     let providerFiber: PluginFiber | undefined
     let disposed = false
     ctx.effect(() => {
@@ -95,7 +98,7 @@ export function apply(ctx: Context, config?: Config): void {
           const roots = [
             packagedSkillsDir(),
             ...loadState().skillRoots.flatMap(entry => entry.roots),
-            ...agentSkillRoots(),
+            ...agentSkillMountRoots(),
           ].filter(dir => existsSync(dir))
           try {
             providerFiber = hostCtx.plugin(plugin, roots.length > 0 ? { customSkillDirs: roots } : {}) as PluginFiber

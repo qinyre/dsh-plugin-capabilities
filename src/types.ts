@@ -41,4 +41,19 @@ export interface SkillsService {
 export interface CapabilitiesHost {
   webServer: WebServerService
   skills: SkillsService
+  /**
+   * Lazy service lookup (cordis `ctx.get`) for optional host services such as
+   * `workspaceRegistry` — absent on old hosts, which the callers treat as
+   * "no workspace picker" rather than an error.
+   */
+  get?(name: string): unknown
+}
+
+/** One registered workspace as the picker shows it. */
+export interface WorkspaceView {
+  id: string
+  title: string
+  path: string
+  /** False when the directory disappeared from disk (rows stay visible). */
+  available: boolean
 }

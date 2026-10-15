@@ -2,14 +2,18 @@
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-/** Read and JSON-parse a request body, bounded to 1 MiB (skill bodies live here). */
-export async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+/** Default body bound; skill bodies live here. */
+export const DEFAULT_BODY_LIMIT = 1024 * 1024
+
+/** Read and JSON-parse a request body, bounded by `maxBytes` (default 1 MiB;
+ * the ZIP import route raises the bound for its base64 payload). */
+export async function readJsonBody(request: IncomingMessage, maxBytes: number = DEFAULT_BODY_LIMIT): Promise<unknown> {
   const chunks: Buffer[] = []
   let received = 0
   for await (const chunk of request) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
     received += buffer.length
-    if (received > 1024 * 1024) throw new Error('request body too large')
+    if (received > maxBytes) throw new Error('request body too large')
     chunks.push(buffer)
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))

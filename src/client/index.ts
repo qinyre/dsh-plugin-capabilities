@@ -67,25 +67,54 @@ export interface ImportedServerView {
 /** Openable targets on the host (server resolves real paths). */
 export type OpenTarget =
   | { target: 'user-skills' }
-  | { target: 'skill'; name: string }
+  | { target: 'skill'; name: string; workspace?: string }
   | { target: 'root'; id: string }
+
+/** One registered workspace as the picker shows it. */
+export interface WorkspaceItemView {
+  id: string
+  title: string
+  path: string
+  available: boolean
+}
+
+/** Skill import request/response shapes (server: POST /skills/import). */
+export interface ImportRequest {
+  source: { kind: 'folder' | 'file'; path: string } | { kind: 'zip'; data: string }
+  dest: { kind: 'user' } | { kind: 'workspace'; id: string }
+  conflict: 'skip' | 'overwrite'
+}
+
+export interface ImportOutcomeView {
+  ok: boolean
+  imported: Array<{ name: string; overwritten: boolean }>
+  skipped: string[]
+  failed: Array<{ name: string; error: string }>
+}
 
 export function apply(ctx: CapabilitiesClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-plugin-capabilities: dictionaries')
   const t = ctx.locale.bind(NS)
 
+  const wsQuery = (workspace?: string): string =>
+    workspace === undefined || workspace === '' ? '' : `&workspace=${encodeURIComponent(workspace)}`
+
   const skillsInjected: SkillsInjected = {
-    list: () => fetchJson<{ skills: SkillRowView[] }>('/dsh-plugin-capabilities/skills'),
-    get: (name: string) => fetchJson<SkillBody>(`/dsh-plugin-capabilities/skill?name=${encodeURIComponent(name)}`),
+    list: (options?: { workspace?: string }) =>
+      fetchJson<{ skills: SkillRowView[] }>(`/dsh-plugin-capabilities/skills?1=1${wsQuery(options?.workspace)}`),
+    get: (name: string, options?: { workspace?: string }) =>
+      fetchJson<SkillBody>(`/dsh-plugin-capabilities/skill?name=${encodeURIComponent(name)}${wsQuery(options?.workspace)}`),
     save: (input: unknown) => post('/dsh-plugin-capabilities/skill/save', input) as Promise<{ ok: boolean }>,
     remove: (name: string) => post('/dsh-plugin-capabilities/skill/delete', { name }) as Promise<{ ok: boolean }>,
-    policy: (name: string, enabled: boolean) =>
-      post('/dsh-plugin-capabilities/skill/policy', { name, enabled }) as Promise<{ ok: boolean }>,
+    policy: (name: string, enabled: boolean, options?: { workspace?: string }) =>
+      post('/dsh-plugin-capabilities/skill/policy', { name, enabled, ...(options?.workspace ? { workspace: options.workspace } : {}) }) as Promise<{ ok: boolean }>,
     open: (target: OpenTarget) => post('/dsh-plugin-capabilities/open', target) as Promise<{ ok: boolean }>,
     roots: () => fetchJson<{ roots: RootRowView[] }>('/dsh-plugin-capabilities/roots'),
     addRoot: (input: { kind: 'local' | 'git'; path?: string; url?: string }) =>
       post('/dsh-plugin-capabilities/roots/add', input) as Promise<{ ok: boolean; root: RootRowView }>,
     removeRoot: (id: string) => post('/dsh-plugin-capabilities/roots/remove', { id }) as Promise<{ ok: boolean }>,
+    workspaces: () => fetchJson<{ supported: boolean; items: WorkspaceItemView[] }>('/dsh-plugin-capabilities/workspaces'),
+    importSkills: (input: ImportRequest) => post('/dsh-plugin-capabilities/skills/import', input) as Promise<ImportOutcomeView>,
   }
 
   const mcpInjected: McpInjected = {
