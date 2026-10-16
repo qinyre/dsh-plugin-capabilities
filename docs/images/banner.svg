@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-label="dsh-plugin-capabilities：在 dsh 设置页管理技能与 MCP 服务器" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1322"/>
+      <stop offset="1" stop-color="#152a4d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4dabf7"/>
+      <stop offset="1" stop-color="#2ee6d6"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.92" cy="0.05" r="0.75">
+      <stop offset="0" stop-color="#2563eb" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#2563eb" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.02" cy="0.98" r="0.7">
+      <stop offset="0" stop-color="#0ea5e9" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="1.6" cy="1.6" r="1.6" fill="#3b5f8f"/>
+    </pattern>
+    <clipPath id="frame"><rect width="1280" height="300" rx="28"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="300" fill="url(#bg)"/>
+    <rect width="1280" height="300" fill="url(#glowA)"/>
+    <rect width="1280" height="300" fill="url(#glowB)"/>
+    <rect x="760" width="520" height="300" fill="url(#dots)" opacity="0.16"/>
+  </g>
+
+  <g transform="translate(150,150)">
+    <rect x="-72" y="-88" width="132" height="170" rx="14" transform="rotate(-10)" fill="#1d3a61" opacity="0.45"/>
+    <rect x="-68" y="-84" width="132" height="170" rx="14" transform="rotate(-4)" fill="#234a7c" opacity="0.75"/>
+    <rect x="-64" y="-80" width="132" height="170" rx="14" fill="#0d1e35" stroke="url(#accent)" stroke-width="3.5"/>
+    <rect x="-40" y="-54" width="84" height="12" rx="6" fill="url(#accent)"/>
+    <rect x="-40" y="-28" width="72" height="9" rx="4.5" fill="#54749e"/>
+    <rect x="-40" y="-10" width="84" height="9" rx="4.5" fill="#54749e"/>
+    <rect x="-40" y="8" width="56" height="9" rx="4.5" fill="#54749e"/>
+    <rect x="-40" y="34" width="44" height="18" rx="9" fill="none" stroke="#2ee6d6" stroke-width="2.5"/>
+    <circle cx="-8" cy="43" r="5.5" fill="#2ee6d6"/>
+  </g>
+
+  <text x="300" y="122" font-size="48" font-weight="700" letter-spacing="0.5" fill="#ecf4ff">dsh-plugin-capabilities</text>
+  <text x="303" y="168" font-size="24" fill="#9db8d9">在 dsh 设置页管理技能与 MCP 服务器</text>
+
+  <g font-size="16" fill="#9fc3e8" text-anchor="middle">
+    <rect x="303" y="202" width="100" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
+    <text x="353" y="223">技能目录</text>
+    <rect x="415" y="202" width="116" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
+    <text x="473" y="223">Agent 扫描</text>
+    <rect x="543" y="202" width="100" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
+    <text x="593" y="223">项目技能</text>
+    <rect x="655" y="202" width="100" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
+    <text x="705" y="223">技能导入</text>
+    <rect x="767" y="202" width="124" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
+    <text x="829" y="223">MCP 管理</text>
+    <rect x="903" y="202" width="68" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
+    <text x="937" y="223">市场</text>
+  </g>
+</svg>
