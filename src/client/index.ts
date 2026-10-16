@@ -119,21 +119,20 @@ export function apply(ctx: CapabilitiesClientContext): void {
 
   const mcpInjected: McpInjected = {
     list: () => fetchJson<{ servers: McpRow[]; globalError?: string }>('/dsh-plugin-capabilities/mcp'),
-    save: (input: unknown) => post('/dsh-plugin-capabilities/mcp/save', input) as Promise<{ ok: boolean; id: string }>,
+    save: (input: unknown) => post('/dsh-plugin-capabilities/mcp/save', input) as Promise<{ ok: boolean; id: string; applied?: boolean; restartNeeded?: boolean }>,
     toggle: (id: string, disabled: boolean, scope: McpScope) =>
-      post('/dsh-plugin-capabilities/mcp/toggle', { id, disabled, scope }) as Promise<{ ok: boolean }>,
-    remove: (id: string, scope: McpScope) => post('/dsh-plugin-capabilities/mcp/remove', { id, scope }) as Promise<{ ok: boolean }>,
+      post('/dsh-plugin-capabilities/mcp/toggle', { id, disabled, scope }) as Promise<{ ok: boolean; applied?: boolean; restartNeeded?: boolean }>,
+    remove: (id: string, scope: McpScope) => post('/dsh-plugin-capabilities/mcp/remove', { id, scope }) as Promise<{ ok: boolean; applied?: boolean; restartNeeded?: boolean }>,
     check: (id: string, scope: McpScope) => post('/dsh-plugin-capabilities/mcp/check', { id, scope }) as Promise<{ ok: boolean; detail?: string }>,
     copy: (id: string, scope: McpScope, toScope: McpScope) =>
-      post('/dsh-plugin-capabilities/mcp/copy', { id, scope, toScope }) as Promise<{ ok: boolean; id: string }>,
+      post('/dsh-plugin-capabilities/mcp/copy', { id, scope, toScope }) as Promise<{ ok: boolean; id: string; applied?: boolean; restartNeeded?: boolean }>,
     scanImport: () => fetchJson<{ servers: ImportedServerView[]; existing: string[] }>('/dsh-plugin-capabilities/import/scan'),
     applyImport: (items: Array<{ agent: string; name: string }>, scope: McpScope) =>
-      post('/dsh-plugin-capabilities/import/apply', { items, scope }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>,
+      post('/dsh-plugin-capabilities/import/apply', { items, scope }) as Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }>; applied?: boolean; restartNeeded?: boolean }>,
     restart: async (): Promise<void> => {
-      if (window.dshDesktop !== undefined) {
-        window.dshDesktop.restartSidecar?.()
-        return
-      }
+      // 桌面端没有（也从未有过）可用的重启桥：官方方式是托盘菜单「重启服务」，
+      // 横幅文字负责指引；这里直接返回，不再调用不存在的接口。
+      if (window.dshDesktop !== undefined) return
       // 独立 dsh web：自重启路由。连接在关停途中断开属预期，不算失败。
       try { await post('/dsh-plugin-capabilities/restart', {}) } catch { /* dying mid-restart is expected */ }
     },
@@ -146,7 +145,7 @@ export function apply(ctx: CapabilitiesClientContext): void {
     installSkillRepo: (url: string) =>
       post('/dsh-plugin-capabilities/market/skills/install', { url }) as Promise<{ ok: boolean; root: RootRowView }>,
     installMcp: (id: string, scope: McpScope) =>
-      post('/dsh-plugin-capabilities/market/mcp/install', { id, scope }) as Promise<{ ok: boolean; id: string }>,
+      post('/dsh-plugin-capabilities/market/mcp/install', { id, scope }) as Promise<{ ok: boolean; id: string; applied?: boolean; restartNeeded?: boolean }>,
     removeRoot: skillsInjected.removeRoot,
   }
 

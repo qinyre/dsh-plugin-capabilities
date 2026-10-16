@@ -31,7 +31,7 @@ export interface MarketInjected {
   skillsIndex(): Promise<{ source: 'remote' | 'bundled'; repos: Array<MarketRepoView & { installedId: string | null }> }>
   mcpIndex(): Promise<{ source: 'remote' | 'bundled'; servers: Array<MarketServerView & { installed: boolean }> }>
   installSkillRepo(url: string): Promise<{ ok: boolean; root: RootRowView }>
-  installMcp(id: string, scope: McpScope): Promise<{ ok: boolean; id: string }>
+  installMcp(id: string, scope: McpScope): Promise<{ ok: boolean; id: string; applied?: boolean; restartNeeded?: boolean }>
   removeRoot(id: string): Promise<{ ok: boolean }>
 }
 
@@ -95,8 +95,8 @@ export function MarketTab(props: { t: Translate; market: MarketInjected; mcp: Mc
     setBusyId(server.id)
     setOutcome(null)
     try {
-      await market.installMcp(server.id, mcpScope)
-      setOutcome({ ok: true, text: t('restartNeeded') })
+      const result = await market.installMcp(server.id, mcpScope)
+      setOutcome({ ok: true, text: result.applied === true ? t('appliedLive') : t('restartNeeded') })
       refreshMcp()
     } catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })

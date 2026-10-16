@@ -47,6 +47,8 @@ export interface CapabilitiesHost {
    * "no workspace picker" rather than an error.
    */
   get?(name: string): unknown
+  /** The host's root context (cordis `ctx.root`), for the live recompose. */
+  root?: unknown
 }
 
 /** One registered workspace as the picker shows it. */

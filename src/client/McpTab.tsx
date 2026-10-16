@@ -31,13 +31,13 @@ export interface McpRow {
 
 export interface McpInjected {
   list(): Promise<{ servers: McpRow[]; globalError?: string }>
-  save(input: Record<string, unknown>): Promise<{ ok: boolean; id: string }>
-  toggle(id: string, disabled: boolean, scope: McpScope): Promise<{ ok: boolean }>
-  remove(id: string, scope: McpScope): Promise<{ ok: boolean }>
+  save(input: Record<string, unknown>): Promise<{ ok: boolean; id: string; applied?: boolean; restartNeeded?: boolean }>
+  toggle(id: string, disabled: boolean, scope: McpScope): Promise<{ ok: boolean; applied?: boolean; restartNeeded?: boolean }>
+  remove(id: string, scope: McpScope): Promise<{ ok: boolean; applied?: boolean; restartNeeded?: boolean }>
   check(id: string, scope: McpScope): Promise<{ ok: boolean; detail?: string }>
-  copy(id: string, scope: McpScope, toScope: McpScope): Promise<{ ok: boolean; id: string }>
+  copy(id: string, scope: McpScope, toScope: McpScope): Promise<{ ok: boolean; id: string; applied?: boolean; restartNeeded?: boolean }>
   scanImport(): Promise<{ servers: ImportedServerView[]; existing: string[] }>
-  applyImport(items: Array<{ agent: string; name: string }>, scope: McpScope): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }> }>
+  applyImport(items: Array<{ agent: string; name: string }>, scope: McpScope): Promise<{ ok: boolean; results: Array<{ name: string; ok: boolean; error?: string }>; applied?: boolean; restartNeeded?: boolean }>
   restart(): Promise<void>
   desktop: boolean
 }
@@ -266,11 +266,12 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     try {
       const body = await injected.applyImport(items, importScope)
       const failed = body.results.filter(item => !item.ok)
+      const applied = body.applied === true
       setOutcome(failed.length === 0
-        ? { ok: true, text: t('restartNeeded') }
+        ? { ok: true, text: applied ? t('appliedLive') : t('restartNeeded') }
         : { ok: false, text: `${t('failed')}: ${failed.map(item => `${item.name} (${item.error})`).join(', ')}` })
       setImportOpen(false)
-      setPending(true)
+      setPending(!applied)
       setReload((value) => value + 1)
     } catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
@@ -360,7 +361,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     setBusy(true)
     setFormError(null)
     try {
-      await injected.save({
+      const result = await injected.save({
         id: editor.id,
         scope: editor.scope,
         serverName: editor.serverName.trim(),
@@ -377,8 +378,9 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
             }),
       })
       setEditor(null)
-      setOutcome({ ok: true, text: t('restartNeeded') })
-      reloadList(true)
+      const applied = result.applied === true
+      setOutcome({ ok: true, text: applied ? t('appliedLive') : t('restartNeeded') })
+      reloadList(!applied)
     } catch (error) {
       setFormError(String(error instanceof Error ? error.message : error))
     } finally {
@@ -389,9 +391,10 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
   const doToggle = async (row: McpRow): Promise<void> => {
     setBusy(true)
     try {
-      await injected.toggle(row.id, !row.disabled, row.scope)
-      setOutcome({ ok: true, text: t('restartNeeded') })
-      reloadList(true)
+      const result = await injected.toggle(row.id, !row.disabled, row.scope)
+      const applied = result.applied === true
+      setOutcome({ ok: true, text: applied ? t('appliedLive') : t('restartNeeded') })
+      reloadList(!applied)
     } catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
     } finally {
@@ -403,9 +406,10 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     if (confirmRow === null) return
     setBusy(true)
     try {
-      await injected.remove(confirmRow.id, confirmRow.scope)
-      setOutcome({ ok: true, text: t('restartNeeded') })
-      reloadList(true)
+      const result = await injected.remove(confirmRow.id, confirmRow.scope)
+      const applied = result.applied === true
+      setOutcome({ ok: true, text: applied ? t('appliedLive') : t('restartNeeded') })
+      reloadList(!applied)
     } catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
     } finally {
@@ -431,9 +435,10 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
     setBusy(true)
     try {
       const toScope: McpScope = row.scope === 'global' ? 'profile' : 'global'
-      await injected.copy(row.id, row.scope, toScope)
-      setOutcome({ ok: true, text: t('restartNeeded') })
-      reloadList(true)
+      const result = await injected.copy(row.id, row.scope, toScope)
+      const applied = result.applied === true
+      setOutcome({ ok: true, text: applied ? t('appliedLive') : t('restartNeeded') })
+      reloadList(!applied)
     } catch (error) {
       setOutcome({ ok: false, text: `${t('failed')}: ${String(error instanceof Error ? error.message : error)}` })
     } finally {
@@ -469,7 +474,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
           {restarting
             ? (!injected.desktop && t('restartPortHint'))
             : injected.desktop
-              ? <>{t('restartDesktopHint')}{' '}<Button variant="outline" size="sm" onClick={() => setRestartConfirm(true)}>{t('restartNow')}</Button></>
+              ? t('restartDesktopHint')
               : t('restartOtherHint')}
         </span>
       </div>
@@ -484,7 +489,7 @@ export function McpTab(props: { t: Translate; injected: McpInjected }): ReactEle
         <IconApi size={14} aria-hidden="true" />
         <h3>{t('mcpTitle')}</h3>
         <span className="dpc-spacer" />
-        <Button variant="ghost" size="sm" disabled={restarting} onClick={() => setRestartConfirm(true)}>{t('restart')}</Button>
+        {!injected.desktop && <Button variant="ghost" size="sm" disabled={restarting} onClick={() => setRestartConfirm(true)}>{t('restart')}</Button>}
         <Button variant="ghost" size="sm" onClick={() => void openImport()}>{t('importServers')}</Button>
         <Button variant="primary" size="sm" onClick={openCreate}>{t('addServer')}</Button>
       </div>

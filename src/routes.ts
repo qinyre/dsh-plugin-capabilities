@@ -11,6 +11,7 @@ import { loadMarketIndex, type MarketMcpServer } from './market.ts'
 import { openDirectory } from './opener.ts'
 import { addGitRepo, addLocalRepo, rootExists } from './repos.ts'
 import { dshLaunch, restartOwnedByShell, scheduleRestart, trustedRestartRequest } from './restart.ts'
+import { recomposeProfile } from './recompose.ts'
 import { deleteSkill, setSkillPolicy, updateSkillFile, userSkillsDir, validateSkillInput, writeSkill, type SkillInput } from './skills.ts'
 import { findRootByUrl, loadState, pluginStateDir, removeSkillRoot, type SkillRootEntry } from './state.ts'
 import { removeTree } from './rmtree.ts'
@@ -623,7 +624,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           }
           const scope = readScope(body.scope)
           const id = upsertMcp(mcpScopeDir(scope, config.profileDirPath, config.dshHomePath), input)
-          sendJson(response, 200, { ok: true, id, scope, restartNeeded: true })
+          const applied = await recomposeProfile(host)
+          sendJson(response, 200, { ok: true, id, scope, applied, restartNeeded: !applied })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -670,7 +672,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           }
           const scope = readScope(input.scope)
           const id = upsertMcp(mcpScopeDir(scope, config.profileDirPath, config.dshHomePath), input)
-          sendJson(response, 200, { ok: true, id, scope, restartNeeded: true })
+          const applied = await recomposeProfile(host)
+          sendJson(response, 200, { ok: true, id, scope, applied, restartNeeded: !applied })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -698,7 +701,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           }
           const dir = mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath)
           const ok = setMcpDisabled(dir, body.id, body.disabled)
-          sendJson(response, ok ? 200 : 404, ok ? { ok: true, restartNeeded: true } : { error: 'server row not found' })
+          const applied = ok ? await recomposeProfile(host) : false
+          sendJson(response, ok ? 200 : 404, ok ? { ok: true, applied, restartNeeded: !applied } : { error: 'server row not found' })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -726,7 +730,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
           }
           const dir = mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath)
           const ok = removeMcp(dir, body.id)
-          sendJson(response, ok ? 200 : 404, ok ? { ok: true, restartNeeded: true } : { error: 'server row not found' })
+          const applied = ok ? await recomposeProfile(host) : false
+          sendJson(response, ok ? 200 : 404, ok ? { ok: true, applied, restartNeeded: !applied } : { error: 'server row not found' })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -800,7 +805,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             return
           }
           const id = upsertMcp(mcpScopeDir(toScope, config.profileDirPath, config.dshHomePath), input)
-          sendJson(response, 200, { ok: true, id, scope: toScope, restartNeeded: true })
+          const applied = await recomposeProfile(host)
+          sendJson(response, 200, { ok: true, id, scope: toScope, applied, restartNeeded: !applied })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
@@ -872,7 +878,8 @@ export function mountCapabilitiesRoutes(host: CapabilitiesHost, config: Capabili
             upsertMcp(mcpScopeDir(readScope(body.scope), config.profileDirPath, config.dshHomePath), input)
             results.push({ name: server.name, ok: true })
           }
-          sendJson(response, 200, { ok: results.every(item => item.ok), results, restartNeeded: true })
+          const applied = results.some(item => item.ok) ? await recomposeProfile(host) : false
+          sendJson(response, 200, { ok: results.every(item => item.ok), results, applied, restartNeeded: !applied })
         } catch (error) {
           sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
         }
