@@ -1,61 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-label="dsh-plugin-capabilities：在 dsh 设置页管理技能与 MCP 服务器" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0b1322"/>
-      <stop offset="1" stop-color="#152a4d"/>
-    </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4dabf7"/>
-      <stop offset="1" stop-color="#2ee6d6"/>
-    </linearGradient>
-    <radialGradient id="glowA" cx="0.92" cy="0.05" r="0.75">
-      <stop offset="0" stop-color="#2563eb" stop-opacity="0.38"/>
-      <stop offset="1" stop-color="#2563eb" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glowB" cx="0.02" cy="0.98" r="0.7">
-      <stop offset="0" stop-color="#0ea5e9" stop-opacity="0.2"/>
-      <stop offset="1" stop-color="#0ea5e9" stop-opacity="0"/>
-    </radialGradient>
-    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
-      <circle cx="1.6" cy="1.6" r="1.6" fill="#3b5f8f"/>
-    </pattern>
-    <clipPath id="frame"><rect width="1280" height="300" rx="28"/></clipPath>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="title desc">
+  <title id="title">DSH Capabilities — Skills &amp; MCP. All together.</title>
+  <desc id="desc">dsh 技能与 MCP 管理工具。米白色横幅右侧展示技能目录和 MCP 服务汇入同一个管理面板的示意。</desc>
+  <rect x="1" y="1" width="1278" height="398" rx="16" fill="#f5f3ed" stroke="#deded5"/>
+  <g font-family="Consolas, 'Liberation Mono', monospace" font-size="13" letter-spacing="2" fill="#67726a">
+    <text x="56" y="49">DSH / COMMUNITY PLUGINS</text>
+    <text x="1224" y="49" text-anchor="end" fill="#365f9b">02 — CAPABILITIES</text>
+  </g>
+  <g font-family="Georgia, 'Times New Roman', serif" font-size="72" letter-spacing="-2">
+    <text x="52" y="145" fill="#242e28">Skills &amp; MCP.</text>
+    <text x="52" y="222" fill="#365f9b">All together.</text>
+  </g>
+  <text x="56" y="272" fill="#5e6961" font-size="20" font-family="'Microsoft YaHei', 'PingFang SC', sans-serif">技能、工具、已有配置，一个地方管理。</text>
 
-  <g clip-path="url(#frame)">
-    <rect width="1280" height="300" fill="url(#bg)"/>
-    <rect width="1280" height="300" fill="url(#glowA)"/>
-    <rect width="1280" height="300" fill="url(#glowB)"/>
-    <rect x="760" width="520" height="300" fill="url(#dots)" opacity="0.16"/>
+  <g stroke="#c4cfcf" stroke-width="1.5" fill="none">
+    <path d="M805 125H837Q849 125 849 137V174Q849 186 861 186H892"/>
+    <path d="M805 245H837Q849 245 849 233V198Q849 186 861 186"/>
+  </g>
+  <g font-family="'Segoe UI', sans-serif">
+    <rect x="700" y="89" width="105" height="72" rx="10" fill="#fffefa" stroke="#d8ddd2"/>
+    <path d="M741 108h11l5 5h8v15h-24z" fill="#e8edf5" stroke="#6e88aa" stroke-width="1.5" stroke-linejoin="round"/>
+    <text x="752" y="148" text-anchor="middle" font-size="12" fill="#52677e">Skills</text>
+    <rect x="700" y="209" width="105" height="72" rx="10" fill="#fffefa" stroke="#d8ddd2"/>
+    <path d="m746 227-6 6 6 6m14-12 6 6-6 6m-6-14-4 16" fill="none" stroke="#6e88aa" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="752" y="268" text-anchor="middle" font-size="12" fill="#52677e">MCP servers</text>
+
+    <rect x="904" y="83" width="322" height="229" rx="12" fill="#e4e8e9"/>
+    <rect x="892" y="71" width="322" height="229" rx="12" fill="#fffefa" stroke="#d8ddd2"/>
+    <text x="916" y="105" font-size="15" font-weight="600" fill="#27342c">Capabilities</text>
+    <circle cx="1186" cy="99" r="4" fill="#739688"/>
+    <path d="M892 122H1214" stroke="#e8eae2"/>
+    <rect x="916" y="142" width="80" height="26" rx="6" fill="#e8edf5"/>
+    <text x="956" y="159" text-anchor="middle" font-size="12" font-weight="600" fill="#365f9b">Skills</text>
+    <text x="1027" y="159" text-anchor="middle" font-size="12" fill="#7b847a">MCP</text>
+    <text x="1109" y="159" text-anchor="middle" font-size="12" fill="#7b847a">Market</text>
+    <g font-family="Consolas, 'Liberation Mono', monospace" font-size="13" fill="#4e5e55">
+      <text x="916" y="207">skill-creator</text>
+      <text x="916" y="257">find-skills</text>
+    </g>
+    <path d="M916 225H1190" stroke="#e8eae2"/>
+    <g fill="#365f9b">
+      <rect x="1152" y="191" width="38" height="20" rx="10"/>
+      <rect x="1152" y="241" width="38" height="20" rx="10"/>
+    </g>
+    <g fill="#ffffff">
+      <circle cx="1180" cy="201" r="7"/>
+      <circle cx="1180" cy="251" r="7"/>
+    </g>
   </g>
 
-  <g transform="translate(150,150)">
-    <rect x="-72" y="-88" width="132" height="170" rx="14" transform="rotate(-10)" fill="#1d3a61" opacity="0.45"/>
-    <rect x="-68" y="-84" width="132" height="170" rx="14" transform="rotate(-4)" fill="#234a7c" opacity="0.75"/>
-    <rect x="-64" y="-80" width="132" height="170" rx="14" fill="#0d1e35" stroke="url(#accent)" stroke-width="3.5"/>
-    <rect x="-40" y="-54" width="84" height="12" rx="6" fill="url(#accent)"/>
-    <rect x="-40" y="-28" width="72" height="9" rx="4.5" fill="#54749e"/>
-    <rect x="-40" y="-10" width="84" height="9" rx="4.5" fill="#54749e"/>
-    <rect x="-40" y="8" width="56" height="9" rx="4.5" fill="#54749e"/>
-    <rect x="-40" y="34" width="44" height="18" rx="9" fill="none" stroke="#2ee6d6" stroke-width="2.5"/>
-    <circle cx="-8" cy="43" r="5.5" fill="#2ee6d6"/>
-  </g>
-
-  <text x="300" y="122" font-size="48" font-weight="700" letter-spacing="0.5" fill="#ecf4ff">dsh-plugin-capabilities</text>
-  <text x="303" y="168" font-size="24" fill="#9db8d9">在 dsh 设置页管理技能与 MCP 服务器</text>
-
-  <g font-size="16" fill="#9fc3e8" text-anchor="middle">
-    <rect x="303" y="202" width="100" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
-    <text x="353" y="223">技能目录</text>
-    <rect x="415" y="202" width="116" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
-    <text x="473" y="223">Agent 扫描</text>
-    <rect x="543" y="202" width="100" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
-    <text x="593" y="223">项目技能</text>
-    <rect x="655" y="202" width="100" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
-    <text x="705" y="223">技能导入</text>
-    <rect x="767" y="202" width="124" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
-    <text x="829" y="223">MCP 管理</text>
-    <rect x="903" y="202" width="68" height="32" rx="16" fill="#12233f" stroke="#2c4a78" stroke-width="1.5"/>
-    <text x="937" y="223">市场</text>
+  <path d="M56 336H1224" stroke="#d8ddd2"/>
+  <g font-family="Consolas, 'Liberation Mono', monospace" font-size="13">
+    <text x="56" y="368" fill="#576359">dsh-plugin-capabilities</text>
+    <text x="1224" y="368" text-anchor="end" fill="#67726a" letter-spacing="1">DISCOVER / CONFIGURE / CONNECT</text>
   </g>
 </svg>

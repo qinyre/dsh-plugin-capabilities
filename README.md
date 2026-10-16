@@ -1,39 +1,29 @@
-<div align="center">
+<p align="center">
+  <img src="docs/images/banner.svg" width="100%" alt="DSH Capabilities — 在一个地方管理技能与 MCP" />
+</p>
 
-<img src="docs/images/banner.svg" width="100%" alt="dsh-plugin-capabilities — 在 dsh 设置页管理技能与 MCP 服务器" />
+<h1 align="center">dsh-plugin-capabilities</h1>
 
-[![npm version](https://img.shields.io/npm/v/dsh-plugin-capabilities?color=38bdf8&label=npm)](https://www.npmjs.com/package/dsh-plugin-capabilities)
-[![downloads](https://img.shields.io/npm/d18m/dsh-plugin-capabilities?color=38bdf8&label=downloads%20%2F%2018m)](https://www.npmjs.com/package/dsh-plugin-capabilities)
-![dsh runtime](https://img.shields.io/badge/dsh%20runtime-0.1.1%20~%200.2.1%20tested-4c6ef5)
-![platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-64748b)
-[![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](./LICENSE)
+<p align="center">
+  技能、MCP、其他 Agent 的配置，在 dsh 里一起管理。<br />
+  <sub>Your skills and MCP servers, all together.</sub>
+</p>
 
-**在 dsh 设置页管理技能与 MCP 服务器。** 技能目录、仓库、项目技能、导入与两层 MCP 行，一个分区全搞定。
+<p align="center">
+  <a href="https://www.npmjs.com/package/dsh-plugin-capabilities"><img src="https://img.shields.io/npm/v/dsh-plugin-capabilities?style=flat-square&amp;color=365f9b&amp;label=npm" alt="npm 版本" /></a>
+  <a href="https://www.npmjs.com/package/dsh-plugin-capabilities"><img src="https://img.shields.io/npm/dm/dsh-plugin-capabilities?style=flat-square&amp;color=365f9b&amp;label=downloads" alt="每月 npm 下载量" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-67726a?style=flat-square" alt="MIT 许可证" /></a>
+</p>
 
-<sub>Skills &amp; MCP servers, managed in place — right from the DSH settings page.</sub>
+<p align="center">
+  <a href="#安装">安装</a> · <a href="#界面预览">界面预览</a> · <a href="#技能">技能</a> · <a href="#mcp">MCP</a> · <a href="#开发">开发</a>
+</p>
 
-[功能总览](#功能总览) · [技能](#技能) · [MCP](#mcp) · [市场](#市场) · [安装](#安装) · [工作原理](#工作原理)
+---
 
-</div>
+为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的设置页增加 **技能与 MCP** 分区。技能目录、项目技能、仓库导入和 MCP 配置，都可以直接在页面维护。
 
-## 这是什么
-
-在 dsh 设置页新增一级分区「技能与 MCP」（与「通用设置」「模型」并列），内含「技能」「MCP」「市场」三个标签页：技能目录、自定义技能仓库和两层（profile / 全局）MCP 服务器行都能在页面上直接维护，不必手工编辑 YAML。Claude Code、Codex、Cursor、Gemini CLI 等其他 agent 的技能与 MCP 配置也能一键纳入。
-
-在 `dsh web`（含桌面端内嵌的 Web 界面）中均可使用；从 0.1.1 到 0.2.1-alpha 的各代运行时均实测兼容。
-
-## 功能总览
-
-| 能力 | 说明 |
-|:--|:--|
-| 🗂 **技能目录** | 全量技能列表：搜索、来源筛选、调用开关、就地编辑、新建、删除，保存后数秒生效 |
-| 🌐 **Agent 技能扫描** | Claude Code、Codex、Gemini CLI、Cursor 等 16 个 agent 的技能目录自动纳入，零拷贝、原地同步 |
-| 📁 **项目技能** | 工作区下拉切到具体项目，`.dsh/skills` 与 `.agents/skills` 直接管理，与全局目录互不干扰 |
-| 📥 **技能导入** | 文件夹、单个 `.md`、ZIP 三路导入，自带 zip-slip 防护，同名冲突可跳过或覆盖 |
-| 🗃 **技能仓库** | 本地目录或 GitHub `owner/repo` 注册为仓库，仓库布局自动识别，增删即时生效 |
-| 🔌 **MCP 管理** | stdio 与 streamable-http 全支持，profile 与全局两层合并展示，页面完成增删改与可达性检查 |
-| 🌍 **MCP 导入** | 一键扫描 Claude Code、Codex、Cursor、Gemini CLI 的 MCP 配置，选层勾选即成行 |
-| 🏪 **市场** | 精选技能仓库与 MCP 服务器，点开详情、一键安装 |
+适用于 `dsh web` 及内嵌该 Web UI 的桌面端，已有 dsh 0.1.1 至 0.2.1-alpha 系列运行时的兼容验证。
 
 ## 安装
 
@@ -41,65 +31,118 @@
 dsh plugin --profile web add dsh-plugin-capabilities
 ```
 
-本地源码检出也可直接安装（`prepare` 自动构建）：
+安装并加载后，打开 **设置 → 技能与 MCP**，在「技能」「MCP」「市场」三个标签页中使用。
 
-```sh
-dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities
-```
+## 界面预览
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/images/screenshot-skills.png" width="100%" alt="技能页：技能卡片、来源筛选与加载开关" /><br />
+      <sub>技能目录 · 搜索、编辑、开关</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/images/screenshot-mcp.png" width="100%" alt="MCP 页：profile 与全局服务器合并展示" /><br />
+      <sub>MCP 服务器 · 配置、导入、检查</sub>
+    </td>
+  </tr>
+</table>
+
+| 你想做什么 | 从哪里开始 |
+| :-- | :-- |
+| 管理已有技能 | 搜索、按来源筛选、调整调用开关，或打开技能所在目录 |
+| 为项目单独配置技能 | 切换工作区，管理项目的 `.dsh/skills` |
+| 把已有技能带进来 | 导入文件夹、Markdown 或 ZIP；也可注册本地 / GitHub 仓库 |
+| 复用其他 Agent 的配置 | 自动发现技能目录，按需导入 MCP 服务器 |
+| 配置 MCP | 添加 stdio / streamable-http 服务器，选择 profile 或全局范围 |
+| 找新技能和工具 | 打开市场，查看详情后安装精选条目 |
 
 ## 技能
 
-<p align="center"><img src="docs/images/screenshot-skills.png" width="88%" alt="「技能」标签页"></p>
+用户技能保存在 `$DSH_HOME/skills`，可直接新建、编辑和删除；保存后由文件监听更新目录，无需重启。从市场或注册仓库安装的技能也支持就地编辑，并保留编辑器未管理的 frontmatter 字段，如 `license`、`allowed-tools`。
 
-列出 dsh 当前发现的全部技能，带名称、描述、来源与调用策略，列表带搜索与来源筛选，卡片上可一键打开技能所在文件夹。
+每个有文件的技能都有调用开关。关闭后从模型技能目录与 `/` 命令中移除，重新开启恢复默认调用策略。其他 Agent 的技能通过原目录扫描，调整开关也会写回原文件。
 
-- **用户级技能（`$DSH_HOME/skills`）**：可在页面上新建、编辑、删除，文件保存后数秒生效、无需重启。
-- **就地编辑已安装技能**：从市场或仓库安装的技能也能编辑，写回只替换编辑器掌握的几个键，frontmatter 其余内容（license、allowed-tools 等）原样保留。
-- **每个落盘技能都有开关**：关掉即从模型目录与 `/` 命令摘除，打开恢复默认，文件其余内容一字不动。
+<details>
+<summary><strong>复用其他 Agent 的技能</strong></summary>
 
-### Agent 技能扫描
+自动扫描已存在的技能目录，并按 Agent 标注来源：Claude Code、Codex、Gemini CLI、Cursor、GitHub Copilot、Windsurf、OpenCode、Trae（含 CN）、Roo Code、Qoder（含 CN）、CodeBuddy、WorkBuddy、OpenClaw 与 CC Switch。
 
-本机其他 agent 的技能目录会自动纳入扫描，零拷贝、原地同步：Claude Code、Codex、Gemini CLI、Cursor、GitHub Copilot、Windsurf、OpenCode、Trae（含 CN）、Roo Code、Qoder（含 CN）、CodeBuddy、WorkBuddy、OpenClaw 与 CC Switch，目录存在才扫。技能嵌在 marketplace 之类的子目录里也能找到——插件会定位嵌套的技能文件夹并把它的父目录挂进扫描。目录来源在列表里按 agent 名标注（Claude Code、Codex……），可按来源筛选；装了新的 agent 后重启 dsh 即纳入。
+文件留在原目录，改动原地同步；marketplace 等嵌套目录也能发现。安装新 Agent 后，重新挂载技能提供方或重启 dsh 即可纳入扫描。
 
-插件还随包自带 skill-creator 与 find-skills 两条只读技能（来自 [anthropics/skills](https://github.com/anthropics/skills) 与 [vercel-labs/skills](https://github.com/vercel-labs/skills)），随插件升级与卸载。
+插件随包附带两条只读技能：来自 [anthropics/skills](https://github.com/anthropics/skills) 的 skill-creator，以及来自 [vercel-labs/skills](https://github.com/vercel-labs/skills) 的 find-skills。它们随插件升级与卸载。
 
-### 项目技能
+</details>
 
-「技能」页顶部的工作区下拉列出 dsh 已登记的工作区；选定后列表即针对该工作区——项目里的 `.dsh/skills` 与 `.agents/skills` 会进入目录（`项目` 标签），可查看、开关与就地编辑 `.dsh/skills` 里的技能，与全局目录互不干扰。切回「全局」即回到默认视图。
+<details>
+<summary><strong>项目技能与文件导入</strong></summary>
 
-### 导入技能
+顶部工作区选择器列出 dsh 已登记的工作区。选择项目后，目录纳入 `.dsh/skills` 与 `.agents/skills`；其中 `.dsh/skills` 的技能支持就地编辑。切回「全局」恢复默认视图。
 
-「导入技能」支持三种来源：文件夹（单个技能目录，或装着多个技能与散装 `.md` 文件的集合）、单个 `.md` 文件、ZIP 压缩包（≤32 MiB，自动穿透 GitHub 式的仓库包装目录）。目的地可选用户目录（`DSH_HOME/skills`）或某个工作区的 `.dsh/skills`（确认后自动创建）；同名冲突可跳过或覆盖，逐条结果当场列出。导入的技能按 frontmatter 的 `name`（缺省时按文件夹/文件名归一成 kebab-case）落盘，装完即被目录发现，无需重启。
+「导入技能」支持文件夹、单个 `.md` 文件和不超过 32 MiB 的 ZIP。文件夹既可包含一个技能，也可包含多个技能或散装 Markdown；ZIP 能自动识别 GitHub 仓库的外层目录。
 
-### 技能仓库
+目的地可选用户目录或工作区的 `.dsh/skills`，同名冲突可跳过或覆盖，完成后逐条显示结果。技能按 frontmatter 的 `name` 命名，缺省时由文件夹或文件名归一成 kebab-case，导入后无需重启。
 
-支持两类来源：本地目录（直接扫描，删除仓库不动原文件）与 GitHub 仓库（`owner/repo`，可 `#分支` 锁定版本，经 tarball 下载解包到 `DSH_HOME`，无需安装 git）。仓库布局自动识别——单技能居根、各占子目录或集中在二级目录都能找到；增删即时生效，无需重启。
+</details>
+
+<details>
+<summary><strong>注册本地与 GitHub 技能仓库</strong></summary>
+
+本地目录直接扫描，移除仓库记录不会删除原文件。GitHub 仓库支持 `owner/repo` 或完整 URL，可用 `#分支` 指定分支，通过 tarball 下载到 `DSH_HOME`，无需安装 git。
+
+单技能位于根目录、多个技能分放子目录，或集中在二级目录的布局都能识别。添加与移除仓库会重新挂载扫描提供方，即时更新目录，无需重启。
+
+</details>
 
 ## MCP
 
-<p align="center"><img src="docs/images/screenshot-mcp.png" width="88%" alt="「MCP」标签页"></p>
+支持 **stdio** 与 **streamable-http**。添加、编辑、停用、移除，以及从其他 Agent 导入，都在同一页面完成。
 
-管理 `@deepseek-ai/dsh-mcp-client` 服务器行，stdio 与 streamable-http 均支持。
+| 能力 | 行为 |
+| :-- | :-- |
+| 两层配置 | 合并展示当前 profile 与全局层，标明所在层和同名覆盖关系；添加与复制可选择目标层 |
+| 配置互转 | 表单同步生成 YAML 行与 `mcpServers` JSON，也支持粘贴 JSON 解析回表单 |
+| 导入已有服务器 | 扫描 Claude Code、Codex、Cursor 与 Gemini CLI，勾选后写入目标层 |
+| 连接前检查 | stdio 检查 PATH 中的命令；HTTP 以短超时 GET 检查地址可达性，不代表完整 MCP 握手成功 |
 
-- **就地增删改**：添加、编辑、停用、移除都在页面完成。YAML 走文档树读写，文件里的其他行与注释不受影响；补丁文件本身有语法错误时，页面直接报出路径与行列、不写入任何内容。
-- **两层合并**：profile 层与全局层（`DSH_HOME/cordis.patch.yml`）合并展示，每行标记所在层，同名时注明谁生效；添加与复制可任选目标层。
-- **检查不启动服务器**：stdio 在 PATH 里确认命令存在，http 发一个短超时 GET 即判断可达。
-- **双向互转**：表单同时给出与保存结果一致的完整 YAML 行和等价的 `mcpServers` JSON 写法，直接抄去别的工具；反过来把 Claude Code 配置或任意 JSON 粘进输入框，点「解析并填充」即可自动填好。
-- **从其他 agent 导入**：一键扫描 Claude Code、Codex、Cursor、Gemini CLI 的 MCP 配置，弹窗里选写入层、勾选条目即成行（Claude 配置里的 `${VAR}` 按字面值导入，需要时导入后改回）。
-- **免离开的重启**：MCP 变更需重启 dsh 生效，页头的「重启」按钮不必离开界面——桌面端由壳层重启 sidecar，独立 `dsh web` 由插件接力重启，页面恢复后自动刷新。
+MCP 配置变更需要重启 dsh。页头「重启」按钮会先确认，再由桌面壳层或独立 Web 服务完成重启，页面恢复后自动刷新。
+
+<details>
+<summary><strong>配置保存与导入细节</strong></summary>
+
+服务器行使用 `@deepseek-ai/dsh-mcp-client`。profile 配置仅作用于当前 profile；全局配置写入 `$DSH_HOME/cordis.patch.yml`，对本机所有 profile 生效。
+
+YAML 通过文档树读写，保留其他行与注释。补丁存在语法错误时，页面报告文件路径与行列，不执行写入。
+
+从 Claude Code 导入的 `${VAR}` 环境变量引用会保留为字面值，需要时请在导入后调整。
+
+桌面端重启由壳层管理；独立运行 `dsh web` 时，插件启动替代进程并退出当前进程。重启会中断正在进行的回合。
+
+</details>
 
 ## 市场
 
-<p align="center">
-  <img src="docs/images/screenshot-market-skills.png" width="49%" alt="「技能市场」">
-  <img src="docs/images/screenshot-market-mcp.png" width="49%" alt="「MCP 市场」">
-</p>
+浏览精选技能仓库和 MCP 服务器，点开条目即可查看技能清单、启动命令、所需环境变量与工具说明。
 
-「技能市场」是精选的技能仓库（Anthropic 官方技能集、Superpowers 工作流集等），点「安装」即走上文仓库的下载解包流程，装完立即出现在「技能」页；「MCP 市场」是精选服务器列表（filesystem、memory、git 及 context7 等常用第三方），点「添加」等价于手工添加一条服务器行，写入哪一层跟随列表上方的范围选择。条目都可点开看详情：技能仓库列出内含技能清单，MCP 服务器列出启动命令、环境变量与工具清单。列表来自[本仓库](https://github.com/qinyre/dsh-plugin-capabilities)的在线索引，离线时回退包内快照；已安装条目可直接卸载。
+技能仓库安装后立即进入目录；MCP 条目写入当前选择的配置层，需要密钥的服务器会标出环境变量。已安装条目可以在市场卸载。在线索引不可用时，回退到包内快照。
 
-## 工作原理
+<details>
+<summary><strong>查看技能市场与 MCP 市场截图</strong></summary>
 
-服务端在 web 服务器上注册 `/dsh-plugin-capabilities/*` 路由，并在宿主平面挂载自己的 filesystem provider 子插件以获得实时技能目录——其他 agent 的目录与用户注册的仓库作为额外扫描根，随插件装卸，不动 preset 层语义。GitHub 仓库由内置纯 JS tar 读取器解包，全程不 spawn 子进程；写操作带同源栅栏与输入校验（技能名、serverName 语法、路径穿越拒绝）。官方桌面壳转发而来的请求没有 Origin 头，仅当回环 Host、回环连接对端、无代理痕迹且无跨站 Sec-Fetch-Site 标记时放行。
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/images/screenshot-market-skills.png" width="100%" alt="技能市场：精选仓库与安装入口" /><br />
+      <sub>技能市场</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/images/screenshot-market-mcp.png" width="100%" alt="MCP 市场：服务器详情与配置入口" /><br />
+      <sub>MCP 市场</sub>
+    </td>
+  </tr>
+</table>
+
+</details>
 
 ## 开发
 
@@ -110,14 +153,47 @@ npm test
 npm run build
 ```
 
-端到端 smoke 默认关闭，要求同级目录下存在 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 源码检出且 Node ≥ 22.19：`DSH_DESKTOP_PLUGIN_SMOKE=1 npm test`。
+<details>
+<summary><strong>本地安装、端到端 smoke 与卸载</strong></summary>
 
-## 许可
+安装本地源码检出，`prepare` 会自动构建 `lib/`：
 
-[MIT](./LICENSE)
+```sh
+dsh plugin --profile web add file:/path/to/dsh-plugin-capabilities
+```
+
+端到端 smoke 默认关闭。需要 Node ≥ 22.19，并在同级目录准备已安装依赖的 `deepseek-harness` 源码检出。测试在临时 `DSH_HOME` 中安装插件、启动真实 `dsh web`，验证技能写入、目录监听及 MCP 配置读写。
+
+```sh
+# macOS / Linux
+DSH_DESKTOP_PLUGIN_SMOKE=1 npm test
+```
+
+```powershell
+# Windows PowerShell
+$env:DSH_DESKTOP_PLUGIN_SMOKE = '1'
+npm test
+```
+
+卸载本插件：
+
+```sh
+dsh plugin --profile web remove dsh-plugin-capabilities
+```
+
+</details>
+
+<details>
+<summary><strong>工作原理与安全</strong></summary>
+
+服务端注册 `/dsh-plugin-capabilities/*` 路由，并以子插件挂载 filesystem skill provider，为设置页提供实时目录。额外技能根随插件装卸，保持 preset 层的技能发现语义。
+
+GitHub 仓库通过纯 JavaScript tar 读取器解包，不启动子进程；路径逃逸与解包大小受到校验，ZIP 导入也检查路径穿越。
+
+写操作校验技能名、MCP 服务器名与路径，并要求同源 POST。官方桌面壳转发的请求没有 Origin 头时，仅在 Host 与连接对端均为回环地址、没有代理痕迹，且没有跨站 `Sec-Fetch-Site` 标记的条件下放行。
+
+</details>
 
 ---
 
-<div align="center">
-<sub>觉得好用的话，去 <a href="https://github.com/qinyre/dsh-plugin-capabilities">仓库首页</a> 点一个 ⭐ Star 是最快的鼓励。</sub>
-</div>
+[插件更新工具](https://github.com/qinyre/dsh-plugin-install) · [反馈问题](https://github.com/qinyre/dsh-plugin-capabilities/issues) · [MIT License](./LICENSE)
